@@ -4,7 +4,8 @@
       "Bash(tree:*)",
       "Bash(npm install:*)",
       "Bash(npx prisma:*)",
-      "Bash(npx:*)"
+      "Bash(npx:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []

@@ -1,7 +1,7 @@
 "use client"
 
 import { useSession, signOut } from "next-auth/react"
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -56,7 +56,7 @@ interface Schedule {
   items: ScheduleItem[]
 }
 
-export default function SchedulePage() {
+function SchedulePageContent() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -569,5 +569,20 @@ export default function SchedulePage() {
         </div>
       </main>
     </div>
+  )
+}
+
+export default function SchedulePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="text-lg text-gray-600 font-medium">Loading schedule...</div>
+        </div>
+      </div>
+    }>
+      <SchedulePageContent />
+    </Suspense>
   )
 }
