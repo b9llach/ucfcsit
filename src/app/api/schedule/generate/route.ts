@@ -215,7 +215,7 @@ function generatePrerequisiteAwareSchedule(allCourses: Course[], completedCourse
 
   for (let iteration = 0; iteration < maxIterations && coursesScheduled < finalRequiredCourses.length; iteration++) {
     const semester = semesterOrder[semesterIndex % semesterOrder.length]
-    const semesterYear = year + Math.floor(semesterIndex / semesterOrder.length)
+    const semesterYear = currentYear + Math.floor(semesterIndex / semesterOrder.length)
     
     console.log(`Planning ${semester} ${semesterYear} (iteration ${iteration})`)
     
@@ -254,33 +254,51 @@ function generatePrerequisiteAwareSchedule(allCourses: Course[], completedCourse
     semesterIndex++
   }
 
-  // Add some electives
-  const minElectives = completedCourseIds.size === 0 ? 6 : 2
-  const electivesToAdd = Math.min(minElectives, electives.length)
+  // Add electives to fill remaining slots in existing semesters
+  const minElectives = Math.min(3, electives.length) // Reasonable number of electives
   let electivesAdded = 0
   
-  while (electivesAdded < electivesToAdd && semesterIndex < maxIterations * 3) {
-    const semester = semesterOrder[semesterIndex % semesterOrder.length]
-    const semesterYear = year + Math.floor(semesterIndex / semesterOrder.length)
+  // First, try to fill existing semesters that have space
+  const semesterGroups = new Map<string, Array<{courseId: string, semester: string, year: number}>>()
+  scheduledCourses.forEach(course => {
+    const key = `${course.semester}-${course.year}`
+    if (!semesterGroups.has(key)) {
+      semesterGroups.set(key, [])
+    }
+    semesterGroups.get(key)!.push(course)
+  })
+  
+  // Fill existing semesters that have space
+  for (const [semesterKey, courses] of semesterGroups) {
+    if (electivesAdded >= minElectives) break
     
-    // Count courses in this semester
-    const coursesInSemester = scheduledCourses.filter(sc => 
-      sc.semester === semester && sc.year === semesterYear
-    ).length
+    const spacesAvailable = maxCoursesPerSemester - courses.length
+    const electivesToAddHere = Math.min(spacesAvailable, minElectives - electivesAdded)
     
-    if (coursesInSemester < maxCoursesPerSemester && electivesAdded < electives.length) {
+    for (let i = 0; i < electivesToAddHere && electivesAdded < electives.length; i++) {
       scheduledCourses.push({
         courseId: electives[electivesAdded].id,
-        semester: semester,
-        year: semesterYear
+        semester: courses[0].semester,
+        year: courses[0].year
       })
+      console.log(`Scheduled elective ${electives[electivesAdded].code} for ${courses[0].semester} ${courses[0].year}`)
       electivesAdded++
-      console.log(`Scheduled elective ${electives[electivesAdded - 1].code} for ${semester} ${semesterYear}`)
     }
+  }
+  
+  // If we still need more electives, create new semesters
+  while (electivesAdded < minElectives && electivesAdded < electives.length) {
+    const semester = semesterOrder[semesterIndex % semesterOrder.length]
+    const semesterYear = currentYear + Math.floor(semesterIndex / semesterOrder.length)
     
-    if (coursesInSemester >= maxCoursesPerSemester || electivesAdded === 0) {
-      semesterIndex++
-    }
+    scheduledCourses.push({
+      courseId: electives[electivesAdded].id,
+      semester: semester,
+      year: semesterYear
+    })
+    console.log(`Scheduled elective ${electives[electivesAdded].code} for ${semester} ${semesterYear}`)
+    electivesAdded++
+    semesterIndex++
   }
 
   console.log(`Generated prerequisite-aware schedule with ${scheduledCourses.length} courses`)
