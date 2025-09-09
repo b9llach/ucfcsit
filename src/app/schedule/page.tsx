@@ -405,7 +405,7 @@ function SchedulePageContent() {
                     {!isSharedView ? (
                       <div>
                         <p className="text-gray-500 mb-4">
-                          To generate your course schedule, please mark some completed courses in your dashboard first.
+                          Generate a personalized course schedule to see your degree plan laid out semester by semester. Perfect for prospective students or planning your academic path!
                         </p>
                         <Link href="/dashboard" className="inline-flex items-center px-4 py-2 bg-primary text-black rounded-lg hover:bg-primary/90 transition-colors">
                           <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

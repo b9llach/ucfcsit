@@ -285,10 +285,9 @@ export default function Dashboard() {
             </div>
             <div>
               <Button 
-                className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-2 text-sm font-medium cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none active:scale-95 focus:ring-2 focus:ring-primary focus:ring-offset-2 w-full sm:w-auto"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-2 text-sm font-medium cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 active:scale-95 focus:ring-2 focus:ring-primary focus:ring-offset-2 w-full sm:w-auto"
                 onClick={() => router.push('/schedule')}
-                disabled={completedCourses.length === 0}
-                aria-label="Generate course schedule based on completed courses"
+                aria-label="Generate course schedule for degree plan"
               >
                 <span className="flex items-center gap-2">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
