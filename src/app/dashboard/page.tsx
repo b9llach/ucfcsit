@@ -50,8 +50,10 @@ export default function Dashboard() {
   useEffect(() => {
     if (status === "authenticated") {
       fetchData()
+    } else if (status === "unauthenticated") {
+      router.push("/login")
     }
-  }, [status])
+  }, [status, router])
 
   const fetchData = async () => {
     try {

@@ -209,8 +209,8 @@ function SchedulePageContent() {
     )
   }
 
-  if (!session && !isSharedView) {
-    router.push('/')
+  if (status === "unauthenticated" && !isSharedView) {
+    router.push('/login')
     return null
   }
 
