@@ -194,7 +194,7 @@ function generatePrerequisiteAwareSchedule(allCourses: Course[], completedCourse
     }
   })
 
-  // Topological sort to respect prerequisites
+  // Credit-based scheduling to balance semesters
   const scheduledCourses: Array<{
     courseId: string
     semester: string
@@ -210,8 +210,18 @@ function generatePrerequisiteAwareSchedule(allCourses: Course[], completedCourse
   let year = currentYear
   let semesterIndex = 0
   let coursesScheduled = 0
-  const maxCoursesPerSemester = 5
+  const maxCreditsPerSemester = 15 // Target credit hours per semester
   const maxIterations = 20 // Prevent infinite loops
+
+  // Separate courses by credit hours for better balancing
+  const coursesByCredits = new Map<number, Course[]>()
+  finalRequiredCourses.forEach(course => {
+    const credits = course.credits
+    if (!coursesByCredits.has(credits)) {
+      coursesByCredits.set(credits, [])
+    }
+    coursesByCredits.get(credits)!.push(course)
+  })
 
   for (let iteration = 0; iteration < maxIterations && coursesScheduled < finalRequiredCourses.length; iteration++) {
     const semester = semesterOrder[semesterIndex % semesterOrder.length]
@@ -219,23 +229,19 @@ function generatePrerequisiteAwareSchedule(allCourses: Course[], completedCourse
     
     console.log(`Planning ${semester} ${semesterYear} (iteration ${iteration})`)
     
-    let coursesThisSemester = 0
-    const availableCourses = finalRequiredCourses.filter(course => {
-      // Skip if already scheduled
+    let creditsThisSemester = 0
+    
+    // First, schedule 3-credit courses to balance the semester
+    const available3CreditCourses = (coursesByCredits.get(3) || []).filter(course => {
       if (scheduledCourseIds.has(course.id)) return false
-      
-      // Check if all prerequisites are met
       const prereqs = prerequisiteMap.get(course.id) || []
-      const allPrereqsMet = prereqs.every(prereqId => scheduledCourseIds.has(prereqId))
-      
-      return allPrereqsMet
+      return prereqs.every(prereqId => scheduledCourseIds.has(prereqId))
     })
 
-    console.log(`Available courses for ${semester} ${semesterYear}:`, availableCourses.map(c => c.code))
-
-    // Schedule available courses for this semester
-    for (const course of availableCourses) {
-      if (coursesThisSemester >= maxCoursesPerSemester) break
+    // Schedule 3-credit courses (aim for 3-4 courses = 9-12 credits)
+    for (const course of available3CreditCourses) {
+      if (creditsThisSemester + course.credits > maxCreditsPerSemester) break
+      if (creditsThisSemester >= 12) break // Stop at 12 credits from 3-credit courses
       
       scheduledCourses.push({
         courseId: course.id,
@@ -244,11 +250,64 @@ function generatePrerequisiteAwareSchedule(allCourses: Course[], completedCourse
       })
       
       scheduledCourseIds.add(course.id)
-      coursesThisSemester++
+      creditsThisSemester += course.credits
       coursesScheduled++
       
-      console.log(`Scheduled ${course.code} for ${semester} ${semesterYear}`)
+      console.log(`Scheduled ${course.code} (${course.credits} credits) for ${semester} ${semesterYear}`)
     }
+    
+    // Then fill remaining space with other credit courses
+    const otherCreditCourses = finalRequiredCourses.filter(course => {
+      if (scheduledCourseIds.has(course.id)) return false
+      if (course.credits === 3) return false // Already handled above
+      const prereqs = prerequisiteMap.get(course.id) || []
+      return prereqs.every(prereqId => scheduledCourseIds.has(prereqId))
+    })
+
+    // Sort by credits descending to fit larger courses first
+    otherCreditCourses.sort((a, b) => b.credits - a.credits)
+    
+    for (const course of otherCreditCourses) {
+      if (creditsThisSemester + course.credits > maxCreditsPerSemester) continue
+      
+      scheduledCourses.push({
+        courseId: course.id,
+        semester: semester,
+        year: semesterYear
+      })
+      
+      scheduledCourseIds.add(course.id)
+      creditsThisSemester += course.credits
+      coursesScheduled++
+      
+      console.log(`Scheduled ${course.code} (${course.credits} credits) for ${semester} ${semesterYear}`)
+    }
+    
+    // Finally, add 0 and 1 credit courses as fillers if there's space
+    const fillerCourses = finalRequiredCourses.filter(course => {
+      if (scheduledCourseIds.has(course.id)) return false
+      if (course.credits > 1) return false // Only 0 and 1 credit courses
+      const prereqs = prerequisiteMap.get(course.id) || []
+      return prereqs.every(prereqId => scheduledCourseIds.has(prereqId))
+    })
+    
+    for (const course of fillerCourses) {
+      if (creditsThisSemester + course.credits > maxCreditsPerSemester) continue
+      
+      scheduledCourses.push({
+        courseId: course.id,
+        semester: semester,
+        year: semesterYear
+      })
+      
+      scheduledCourseIds.add(course.id)
+      creditsThisSemester += course.credits
+      coursesScheduled++
+      
+      console.log(`Scheduled filler ${course.code} (${course.credits} credits) for ${semester} ${semesterYear}`)
+    }
+    
+    console.log(`${semester} ${semesterYear} total credits: ${creditsThisSemester}`)
     
     // Move to next semester
     semesterIndex++
