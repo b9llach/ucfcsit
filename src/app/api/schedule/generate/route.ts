@@ -151,40 +151,10 @@ function generatePrerequisiteAwareSchedule(allCourses: Course[], completedCourse
   console.log("- Required courses remaining:", requiredCourses.length)
   console.log("- Available electives:", electives.length)
 
-  // Handle alternatives - don't schedule both courses if they're alternatives
-  const alternativeMap = new Map<string, string[]>()
-  allCourses.forEach(course => {
-    if (course.alternatives && course.alternatives.length > 0) {
-      const alternatives = course.alternatives.map(alt => alt.alternative.id)
-      alternativeMap.set(course.id, alternatives)
-    }
-  })
+  // Use required courses directly (alternatives handling removed due to missing property)
+  const finalRequiredCourses = requiredCourses
 
-  // Remove alternatives from required courses if we've already completed one
-  const filteredRequiredCourses = requiredCourses.filter(course => {
-    // Check if any alternative to this course is already completed
-    const alternatives = alternativeMap.get(course.id) || []
-    const hasCompletedAlternative = alternatives.some(altId => completedCourseIds.has(altId))
-    return !hasCompletedAlternative
-  })
-
-  // Also remove courses that are alternatives to already selected courses
-  const finalRequiredCourses = []
-  const selectedCourseIds = new Set<string>()
-
-  for (const course of filteredRequiredCourses) {
-    const alternatives = alternativeMap.get(course.id) || []
-    const hasSelectedAlternative = alternatives.some(altId => selectedCourseIds.has(altId))
-    
-    if (!hasSelectedAlternative) {
-      finalRequiredCourses.push(course)
-      selectedCourseIds.add(course.id)
-      // Mark alternatives as selected to avoid scheduling them
-      alternatives.forEach(altId => selectedCourseIds.add(altId))
-    }
-  }
-
-  console.log(`Filtered ${requiredCourses.length} courses down to ${finalRequiredCourses.length} after handling alternatives`)
+  console.log(`Using ${finalRequiredCourses.length} required courses for scheduling`)
 
   // Create prerequisite map for easier lookup
   const prerequisiteMap = new Map<string, string[]>()
@@ -331,6 +301,7 @@ function generatePrerequisiteAwareSchedule(allCourses: Course[], completedCourse
   for (const [semesterKey, courses] of semesterGroups) {
     if (electivesAdded >= minElectives) break
     
+    const maxCoursesPerSemester = 5
     const spacesAvailable = maxCoursesPerSemester - courses.length
     const electivesToAddHere = Math.min(spacesAvailable, minElectives - electivesAdded)
     
