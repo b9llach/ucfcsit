@@ -255,7 +255,7 @@ function generatePrerequisiteAwareSchedule(allCourses: Course[], completedCourse
   }
 
   // Add electives to fill remaining slots in existing semesters
-  const minElectives = Math.min(3, electives.length) // Reasonable number of electives
+  const minElectives = Math.min(2, electives.length) // Reasonable number of electives
   let electivesAdded = 0
   
   // First, try to fill existing semesters that have space
