@@ -450,6 +450,36 @@ function SchedulePageContent() {
                                 <div className="text-xs text-blue-600 mt-1">
                                   {item.course.credits} credits
                                 </div>
+                                {item.course.prerequisites && item.course.prerequisites.length > 0 && (
+                                  <div className="mt-2 pt-2 border-t border-blue-200">
+                                    <div className="text-xs text-blue-800 font-medium mb-1">Prerequisites:</div>
+                                    <div className="flex flex-wrap gap-1">
+                                      {item.course.prerequisites.map((prereq, index) => (
+                                        <span 
+                                          key={index}
+                                          className="inline-block px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded border"
+                                        >
+                                          {prereq.prerequisite.code}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                                {item.course.corequisites && item.course.corequisites.length > 0 && (
+                                  <div className="mt-2 pt-2 border-t border-blue-200">
+                                    <div className="text-xs text-blue-800 font-medium mb-1">Corequisites:</div>
+                                    <div className="flex flex-wrap gap-1">
+                                      {item.course.corequisites.map((coreq, index) => (
+                                        <span 
+                                          key={index}
+                                          className="inline-block px-2 py-0.5 bg-orange-100 text-orange-800 text-xs rounded border"
+                                        >
+                                          {coreq.corequisite.code}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             ))}
                           </div>
