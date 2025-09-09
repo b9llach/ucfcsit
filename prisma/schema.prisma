@@ -1,0 +1,176 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime? @map("email_verified")
+  image         String?
+  createdAt     DateTime  @default(now()) @map("created_at")
+  
+  accounts      Account[]
+  sessions      Session[]
+  completedCourses UserCourse[]
+  schedules     Schedule[]
+
+  @@map("users")
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verificationtokens")
+}
+
+model Course {
+  id             String   @id @default(cuid())
+  code           String   @unique
+  name           String
+  credits        Int
+  gepRequirement Boolean  @default(false) @map("gep_requirement")
+  category       String?
+  description    String?
+  note           String?
+  isElective     Boolean  @default(false) @map("is_elective")
+  electiveLevel  String?  @map("elective_level") // "4000_level" or "5000_level"
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  
+  prerequisites  Prerequisite[] @relation("PrerequisiteCourse")
+  requiredBy     Prerequisite[] @relation("RequiresCourse")
+  corequisites   Corequisite[]  @relation("CorequisiteCourse")
+  corequisiteOf  Corequisite[]  @relation("RequiresCorequisite")
+  alternatives   Alternative[]  @relation("AlternativeCourse")
+  alternativeOf  Alternative[]  @relation("HasAlternative")
+  userCourses    UserCourse[]
+  scheduleItems  ScheduleItem[]
+
+  @@map("courses")
+}
+
+model Prerequisite {
+  id           String @id @default(cuid())
+  courseId     String @map("course_id")
+  prerequisiteId String @map("prerequisite_id")
+  
+  course       Course @relation("RequiresCourse", fields: [courseId], references: [id], onDelete: Cascade)
+  prerequisite Course @relation("PrerequisiteCourse", fields: [prerequisiteId], references: [id], onDelete: Cascade)
+  
+  @@unique([courseId, prerequisiteId])
+  @@map("prerequisites")
+}
+
+model Corequisite {
+  id            String @id @default(cuid())
+  courseId      String @map("course_id") 
+  corequisiteId String @map("corequisite_id")
+  
+  course        Course @relation("RequiresCorequisite", fields: [courseId], references: [id], onDelete: Cascade)
+  corequisite   Course @relation("CorequisiteCourse", fields: [corequisiteId], references: [id], onDelete: Cascade)
+  
+  @@unique([courseId, corequisiteId])
+  @@map("corequisites")
+}
+
+model Alternative {
+  id            String @id @default(cuid())
+  courseId      String @map("course_id")
+  alternativeId String @map("alternative_id")
+  
+  course        Course @relation("HasAlternative", fields: [courseId], references: [id], onDelete: Cascade)
+  alternative   Course @relation("AlternativeCourse", fields: [alternativeId], references: [id], onDelete: Cascade)
+  
+  @@unique([courseId, alternativeId])
+  @@map("alternatives")
+}
+
+model UserCourse {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  courseId  String   @map("course_id")
+  completed Boolean  @default(true)
+  semester  String?
+  year      Int?
+  createdAt DateTime @default(now()) @map("created_at")
+  
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, courseId])
+  @@map("user_courses")
+}
+
+model Schedule {
+  id          String         @id @default(cuid())
+  userId      String         @map("user_id")
+  name        String         @default("My Schedule")
+  shareToken  String?        @unique @map("share_token")
+  isPublic    Boolean        @default(false) @map("is_public")
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+  
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items       ScheduleItem[]
+  
+  @@map("schedules")
+}
+
+model ScheduleItem {
+  id         String @id @default(cuid())
+  scheduleId String @map("schedule_id")
+  courseId   String @map("course_id")
+  semester   String
+  year       Int
+  
+  schedule   Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  course     Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  
+  @@unique([scheduleId, courseId])
+  @@map("schedule_items")
+}

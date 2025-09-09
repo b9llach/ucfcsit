@@ -1,0 +1,725 @@
+{
+  "courses": {
+    "MAC1105C": {
+      "name": "College Algebra", 
+      "credits": 3,
+      "prerequisites": [],
+      "corequisites": [],
+      "alternatives": ["MAC1140"],
+      "gep_requirement": false
+    },
+    "MAC1140": {
+      "name": "Pre-Calc Algebra",
+      "credits": 3, 
+      "prerequisites": [],
+      "corequisites": [],
+      "alternatives": ["MAC1105C"],
+      "gep_requirement": false
+    },
+    "MAC1114C": {
+      "name": "College Trigonometry",
+      "credits": 3,
+      "prerequisites": [
+        {
+          "options": ["MAC1105C", "MAC1140"]
+        }
+      ],
+      "corequisites": [],
+      "gep_requirement": false
+    },
+    "STA2023": {
+      "name": "Statistical Methods 1",
+      "credits": 3,
+      "prerequisites": [
+        {
+          "options": ["MAC1105C", "MAC1140"]
+        }
+      ],
+      "corequisites": [],
+      "gep_requirement": true
+    },
+    "PHY2053": {
+      "name": "Physics I",
+      "credits": 3,
+      "prerequisites": ["MAC1114C"],
+      "corequisites": ["PHY2053L"],
+      "gep_requirement": true
+    },
+    "PHY2053L": {
+      "name": "Physics I Lab", 
+      "credits": 1,
+      "prerequisites": ["MAC1114C"],
+      "corequisites": ["PHY2053"],
+      "gep_requirement": true
+    },
+    "PHY2054": {
+      "name": "Physics II",
+      "credits": 3,
+      "prerequisites": ["PHY2053", "PHY2053L"],
+      "corequisites": ["PHY2054L"],
+      "gep_requirement": true
+    },
+    "PHY2054L": {
+      "name": "Physics II Lab",
+      "credits": 1, 
+      "prerequisites": ["PHY2053", "PHY2053L"],
+      "corequisites": ["PHY2054"],
+      "gep_requirement": true
+    },
+    "COP2500C": {
+      "name": "Concepts in CS",
+      "credits": 3,
+      "prerequisites": [],
+      "corequisites": ["CIS3003"],
+      "alternatives": ["CS Placement"],
+      "gep_requirement": false
+    },
+    "CIS3003": {
+      "name": "Fundamentals of Info. Technology", 
+      "credits": 3,
+      "prerequisites": [],
+      "corequisites": ["COP2500C"],
+      "gep_requirement": false
+    },
+    "COP3223C": {
+      "name": "Programming in C",
+      "credits": 3,
+      "prerequisites": ["COP2500C"],
+      "corequisites": [],
+      "gep_requirement": false
+    },
+    "CIS3990": {
+      "name": "IT Advising I",
+      "credits": 0,
+      "prerequisites": ["COP3223C"],
+      "corequisites": ["CNT3004"],
+      "gep_requirement": false
+    },
+    "CNT3004": {
+      "name": "Computer Network Concepts",
+      "credits": 3,
+      "prerequisites": ["PHY2053", "PHY2053L"],
+      "corequisites": ["CIS3990"],
+      "gep_requirement": false
+    },
+    "CIS4004": {
+      "name": "Web-based Information Technology",
+      "credits": 3,
+      "prerequisites": ["CNT3004"],
+      "corequisites": [],
+      "gep_requirement": false
+    },
+    "CIS3921": {
+      "name": "Careers in IT", 
+      "credits": 1,
+      "prerequisites": ["CIS3990"],
+      "corequisites": [],
+      "gep_requirement": false
+    },
+    "CIS4991": {
+      "name": "IT Advising II",
+      "credits": 0,
+      "prerequisites": ["CIS3921"],
+      "corequisites": ["COP4910"],
+      "gep_requirement": false
+    },
+    "CIS3360": {
+      "name": "Security in Computing",
+      "credits": 3,
+      "prerequisites": ["COP3223C"],
+      "corequisites": [],
+      "gep_requirement": false
+    },
+    "COP3502C": {
+      "name": "Computer Science 1",
+      "credits": 3,
+      "prerequisites": ["COP3223C", 
+        {
+          "options": ["MAC1105C", "MAC1140"]
+        }
+      ],
+      "corequisites": [],
+      "gep_requirement": false
+    },
+    "CNT4703C": {
+      "name": "Network Laboratory",
+      "credits": 3,
+      "prerequisites": ["COP3502C", "MAD2104"],
+      "corequisites": ["COP4910"],
+      "gep_requirement": false
+    },
+    "PHI3626": {
+      "name": "Ethics in Science and Technology",
+      "credits": 3,
+      "prerequisites": ["COP3502C"],
+      "corequisites": [],
+      "gep_requirement": false
+    },
+    "CIS4524": {
+      "name": "Managing IT Integration",
+      "credits": 3,
+      "prerequisites": ["COP3223C", "CGS2545C"],
+      "corequisites": [],
+      "gep_requirement": false
+    },
+    "CGS2545C": {
+      "name": "Databases",
+      "credits": 3,
+      "prerequisites": [],
+      "corequisites": [],
+      "programming_prerequisite": true,
+      "gep_requirement": false
+    },
+    "CAP3104": {
+      "name": "Human-Computer Interaction",
+      "credits": 3,
+      "prerequisites": ["CGS2545C"],
+      "corequisites": [],
+      "gep_requirement": false
+    },
+    "MAD2104": {
+      "name": "Discrete Math",
+      "credits": 3,
+      "prerequisites": [],
+      "corequisites": [],
+      "gep_requirement": false
+    },
+    "CNT4714": {
+      "name": "Enterprise Computing", 
+      "credits": 3,
+      "prerequisites": ["MAD2104", "CGS3269"],
+      "corequisites": [],
+      "gep_requirement": false
+    },
+    "CGS3269": {
+      "name": "Computer Architecture Concepts",
+      "credits": 3,
+      "prerequisites": [],
+      "corequisites": [],
+      "programming_prerequisite": true,
+      "gep_requirement": false
+    },
+    "CGS3763": {
+      "name": "Operating System Concepts",
+      "credits": 3,
+      "prerequisites": [],
+      "corequisites": [],
+      "programming_prerequisite": true,
+      "gep_requirement": false
+    },
+    "CNT4603": {
+      "name": "System Admin and Maintenance",
+      "credits": 3,
+      "prerequisites": ["CGS3763"],
+      "corequisites": [],
+      "gep_requirement": false
+    },
+    "COP4910": {
+      "name": "Frontiers in Information Technology",
+      "credits": 3,
+      "prerequisites": ["CNT4603"],
+      "corequisites": ["CNT4703C", "CIS4991"],
+      "gep_requirement": false
+    },
+    "PSY2012": {
+      "name": "Psychology",
+      "credits": 3,
+      "prerequisites": [],
+      "corequisites": [],
+      "gep_requirement": true,
+      "category": "GEP Requirement"
+    },
+    "ECO2013": {
+      "name": "Macroeconomics", 
+      "credits": 3,
+      "prerequisites": [],
+      "corequisites": [],
+      "gep_requirement": true,
+      "category": "GEP Requirement"
+    },
+    "ENC3241": {
+      "name": "Technical Report Writing",
+      "credits": 3,
+      "prerequisites": [],
+      "corequisites": [],
+      "alternatives": ["ENC3250"],
+      "category": "Technical Writing Requirement",
+      "gep_requirement": false
+    },
+    "ENC3250": {
+      "name": "Technical Report Writing",
+      "credits": 3,
+      "prerequisites": [],
+      "corequisites": [],
+      "alternatives": ["ENC3241"], 
+      "category": "Technical Writing Requirement",
+      "gep_requirement": false
+    },
+    "ENC4XXX": {
+      "name": "See Degree Audit for List",
+      "credits": 3,
+      "prerequisites": [],
+      "corequisites": [],
+      "category": "Technical Writing Requirement",
+      "gep_requirement": false
+    }
+  },
+  "available_electives": {
+    "cs_it_restricted_electives_4000_level": {
+      "CAP4053": {
+        "name": "AI for Game Programming",
+        "credits": 3,
+        "prerequisites": ["COP3502C"],
+        "description": "Surveys cutting-edge AI techniques for video games and board games"
+      },
+      "CAP4102": {
+        "name": "IT Design and User Experience",
+        "credits": 3,
+        "prerequisites": ["COP3502C"],
+        "description": "User-centered principles to build web-based solutions",
+        "note": "IT course - only one IT course allowed as CS elective"
+      },
+      "CAP4145": {
+        "name": "Introduction to Malware Analysis",
+        "credits": 3,
+        "prerequisites": ["CIS3360", {"options": ["CGS3269", "CDA3103C"]}, {"options": ["CGS3763", "COP4600"]}],
+        "description": "Reverse engineering techniques for binary analysis"
+      },
+      "CAP4314": {
+        "name": "Social Network Analysis",
+        "credits": 3,
+        "prerequisites": ["CNT3004", "COP3330"],
+        "description": "Network structure, visualization, and analysis methods"
+      },
+      "CAP4453": {
+        "name": "Robot Vision",
+        "credits": 3,
+        "prerequisites": ["COP3503C", "MAC2312"],
+        "description": "Computer vision for robotics applications"
+      },
+      "CAP4543": {
+        "name": "Introduction to Bioinformatics Algorithms",
+        "credits": 3,
+        "prerequisites": ["COP3502C"],
+        "description": "Algorithms for biological data analysis"
+      },
+      "CAP4611": {
+        "name": "Algorithms for Machine Learning",
+        "credits": 3,
+        "prerequisites": ["COP3502C", "STA2023"],
+        "description": "Supervised, unsupervised, and reinforcement learning"
+      },
+      "CAP4630": {
+        "name": "Artificial Intelligence",
+        "credits": 3,
+        "prerequisites": ["COP3503C", "COT3960"],
+        "description": "Knowledge-based systems, inference, planning, NLP"
+      },
+      "CAP4641": {
+        "name": "Natural Language Processing",
+        "credits": 3,
+        "prerequisites": ["COP3503C", "COT3960"],
+        "description": "Computational techniques for human language"
+      },
+      "CAP4720": {
+        "name": "Computer Graphics",
+        "credits": 3,
+        "prerequisites": ["COP3503C", "MAC1114C", "COT3960"],
+        "description": "Graphics math, rendering, and API programming"
+      },
+      "CDA3103C": {
+        "name": "Computer Logic and Organization",
+        "credits": 3,
+        "prerequisites": ["COP3223C"],
+        "description": "Logic design, computer arithmetic, ISA",
+        "note": "IT ONLY - can substitute CGS3269"
+      },
+      "CEN4360": {
+        "name": "Mobile Device Software Development",
+        "credits": 3,
+        "prerequisites": ["COP3330"],
+        "description": "Mobile app development concepts and APIs"
+      },
+      "CIS3362": {
+        "name": "Cryptography and Information Security",
+        "credits": 3,
+        "prerequisites": ["COP3223C", "MAC1114C"],
+        "description": "Encryption, keys, digital signatures, certificates"
+      },
+      "CIS4203C": {
+        "name": "Digital Forensics",
+        "credits": 3,
+        "prerequisites": [{"options": ["COP4600", "CGS3763"]}, {"options": ["CIS3360", "CIS3362"]}],
+        "description": "Operating system and digital media forensics"
+      },
+      "CIS4361": {
+        "name": "Secure Operating Systems and Administration",
+        "credits": 3,
+        "prerequisites": ["CIS3360"],
+        "corequisites": [{"options": ["COP4600", "CGS3763", "EEL4882"]}],
+        "description": "Secure OS design principles and protection methods"
+      },
+      "CIS4364": {
+        "name": "Cyber Defense Analysis",
+        "credits": 3,
+        "prerequisites": ["CIS3360"],
+        "description": "Network behavioral analytics and threat hunting"
+      },
+      "CIS4615": {
+        "name": "Secure Software Development and Assurance",
+        "credits": 3,
+        "prerequisites": [{"options": ["COP4600", "CGS3763"]}, {"options": ["CIS3360", "CIS3362"]}],
+        "description": "Threat modeling and secure software development"
+      },
+      "CIS4940C": {
+        "name": "Topics in Cybersecurity",
+        "credits": 3,
+        "prerequisites": ["CIS3360"],
+        "description": "Laboratory simulations of penetration and defense"
+      },
+      "CIS4941": {
+        "name": "Approved IT Internship Experience",
+        "credits": 3,
+        "prerequisites": ["CGS2545C", "CIS3003", "COP3330", "COP3502C", "MAD2104"],
+        "description": "IT-related internship experience",
+        "note": "Requires 3.0+ GPA and approved internship"
+      },
+      "CNT4403": {
+        "name": "Network Security and Privacy",
+        "credits": 3,
+        "prerequisites": [{"options": ["CNT3004", "EEL4781", "CNT4704"]}, {"options": ["CIS3360", "CIS3362"]}],
+        "description": "Network security protocols and privacy issues"
+      },
+      "CNT4425": {
+        "name": "Cloud Computing Management",
+        "credits": 3,
+        "prerequisites": [{"options": ["CGS3763", "COP4600"]}],
+        "description": "Virtualization, containers, cloud systems administration"
+      },
+      "CNT4704": {
+        "name": "Analysis of Computer Communication Networks",
+        "credits": 3,
+        "prerequisites": [{"options": ["COT3100C", "MAD2104"]}, "STA2023"],
+        "description": "Network design, performance, and control issues"
+      },
+      "COP3402": {
+        "name": "Systems Software",
+        "credits": 3,
+        "prerequisites": ["CDA3103C", "COP3502C"],
+        "description": "Assemblers, linkers, compilers, system I/O"
+      },
+      "COP3503C": {
+        "name": "Computer Science II",
+        "credits": 3,
+        "prerequisites": ["COP3502C", "COP3330", {"options": ["MAD2104", "COT3100C"]}],
+        "description": "Advanced algorithms and data structures"
+      },
+      "COP4020": {
+        "name": "Programming Languages I",
+        "credits": 3,
+        "prerequisites": ["COP3503C", "COT3960"],
+        "description": "Programming paradigms and language concepts"
+      },
+      "COP4283": {
+        "name": "Data Science Programming",
+        "credits": 3,
+        "prerequisites": ["COP3223C"],
+        "description": "Programming for data analytics (SAS, R, Python)"
+      },
+      "COP4331C": {
+        "name": "Processes for Object-Oriented Software Development",
+        "credits": 3,
+        "prerequisites": ["COP3503C"],
+        "description": "Large software system development with UML"
+      },
+      "COP4516C": {
+        "name": "Problem Solving Techniques and Team Dynamics",
+        "credits": 3,
+        "prerequisites": ["COP3503C"],
+        "description": "Algorithm application in team projects"
+      },
+      "COP4520": {
+        "name": "Concepts of Parallel and Distributed Processing",
+        "credits": 3,
+        "prerequisites": ["COP3402", "COP3503C", "COT3960"],
+        "description": "Parallel paradigms and distributed algorithms"
+      },
+      "COP4600": {
+        "name": "Operating Systems",
+        "credits": 3,
+        "prerequisites": ["COP3503C", "COP3402", "COT3960"],
+        "description": "OS functions, process management, memory management",
+        "note": "IT ONLY - can substitute CGS3269"
+      },
+      "COP4710": {
+        "name": "Database Systems",
+        "credits": 3,
+        "prerequisites": ["COP3503C"],
+        "description": "Database models, design, and implementation",
+        "note": "IT ONLY - can substitute CGS2545C"
+      },
+      "COP4941": {
+        "name": "Approved CS Internship Experience",
+        "credits": 3,
+        "prerequisites": ["COP3503C"],
+        "description": "CS-related internship experience",
+        "note": "Requires 3.0+ GPA and approved internship"
+      },
+      "COT4210": {
+        "name": "Discrete Structures II",
+        "credits": 3,
+        "prerequisites": ["COP3503C", "COT3960"],
+        "description": "Computation theory, grammars, and automata"
+      },
+      "COT4400": {
+        "name": "Tools for Algorithm Analysis",
+        "credits": 3,
+        "prerequisites": ["COT3960", "COP3503C"],
+        "description": "Mathematical tools for algorithm complexity"
+      },
+      "COT4500": {
+        "name": "Numerical Calculus",
+        "credits": 3,
+        "prerequisites": ["MAC2312", "COP3223C"],
+        "description": "Numerical methods for equations and ODEs"
+      },
+      "EEL4660": {
+        "name": "Robotic Systems",
+        "credits": 3,
+        "prerequisites": [{"options": ["EGN4060C", "EEL4742C", "COP3503C"]}],
+        "description": "Robotic sensing, vision, and manipulation"
+      },
+      "EEL4768": {
+        "name": "Computer Architecture",
+        "credits": 3,
+        "prerequisites": [{"options": ["EEL3801C", "CDA3103C"]}],
+        "description": "Processor design, pipelines, cache, memory",
+        "note": "IT ONLY - can substitute CGS3269"
+      },
+      "EEL4781": {
+        "name": "Computer Communication Networks",
+        "credits": 3,
+        "prerequisites": ["EEL3801C", "STA3032"],
+        "description": "Network protocols and architectures"
+      },
+      "EGN4060C": {
+        "name": "Introduction to Robotics",
+        "credits": 3,
+        "prerequisites": [{"options": ["COP3223C", "EGN3211"]}, {"options": ["EEL3657", "EEL4742C", "COP3503C", "EGN3321", "EML3217"]}],
+        "description": "Robotics architecture and path planning"
+      },
+      "EGN4641": {
+        "name": "Engineering Entrepreneurship",
+        "credits": 3,
+        "prerequisites": ["Consent of Instructor"],
+        "description": "Lean Startup methodology for tech ventures"
+      }
+    },
+    "cs_it_restricted_electives_5000_level": {
+      "CAP5115": {
+        "name": "Virtual Reality Engineering",
+        "credits": 3,
+        "prerequisites": ["MAS3105"],
+        "description": "VR interaction techniques and 360° videos"
+      },
+      "CAP5150": {
+        "name": "Foundations of Computer Security and Privacy",
+        "credits": 3,
+        "prerequisites": [],
+        "description": "Fundamental computer security and privacy knowledge",
+        "note": "Expects BS in Computer Science knowledge"
+      },
+      "CAP5415": {
+        "name": "Computer Vision",
+        "credits": 3,
+        "prerequisites": ["COP3503C", "MAC2312", "COT3960"],
+        "description": "Image processing and scene analysis"
+      },
+      "CAP5510": {
+        "name": "Bioinformatics",
+        "credits": 3,
+        "prerequisites": ["Programming background or molecular biology"],
+        "description": "Sequence alignment and protein structure prediction"
+      },
+      "CAP5512": {
+        "name": "Evolutionary Computation",
+        "credits": 3,
+        "prerequisites": [{"options": ["CAP4630", "COP3503C"]}],
+        "description": "Genetic algorithms and evolutionary computation"
+      },
+      "CAP5610": {
+        "name": "Machine Learning",
+        "credits": 3,
+        "prerequisites": ["CAP4630"],
+        "description": "Machine learning concepts and expert systems"
+      },
+      "CAP5636": {
+        "name": "Advanced Artificial Intelligence",
+        "credits": 3,
+        "prerequisites": ["CAP4630"],
+        "description": "Advanced AI theory and knowledge representation"
+      },
+      "CAP5725": {
+        "name": "Computer Graphics I",
+        "credits": 3,
+        "prerequisites": [],
+        "description": "Graphics processors and display software"
+      },
+      "CAP5738": {
+        "name": "Visualization Techniques for Data Analysis",
+        "credits": 3,
+        "prerequisites": ["COP3330", "COP3502C"],
+        "description": "Data visualization and statistical analysis"
+      },
+      "CDA5106": {
+        "name": "Advanced Computer Architecture",
+        "credits": 3,
+        "prerequisites": ["EEL4768C"],
+        "description": "Modern processor design and parallelism"
+      },
+      "CDA5110": {
+        "name": "Parallel Architecture and Algorithms",
+        "credits": 3,
+        "prerequisites": ["COT4210", "CDA5106"],
+        "description": "Parallel computers and parallelization techniques"
+      },
+      "CEN5016": {
+        "name": "Software Engineering",
+        "credits": 3,
+        "prerequisites": ["COP4331C"],
+        "description": "Formal software processes and large-scale systems"
+      },
+      "CNT5008": {
+        "name": "Computer Communication Networks Architecture",
+        "credits": 3,
+        "prerequisites": ["EEL4768C"],
+        "description": "Network layers, protocols, and interfaces"
+      },
+      "CNT5805": {
+        "name": "Network Science",
+        "credits": 3,
+        "prerequisites": ["Undergraduate degree in CS, EE, or CpE"],
+        "description": "Complex networks and computational analysis methods"
+      },
+      "COP5021": {
+        "name": "Program Analysis",
+        "credits": 3,
+        "prerequisites": ["COP4020", "COT4210"],
+        "description": "Static analysis and abstract interpretation"
+      },
+      "COP5537": {
+        "name": "Network Optimization",
+        "credits": 3,
+        "prerequisites": ["Graduate standing"],
+        "description": "Graph theory and network optimization algorithms"
+      },
+      "COP5611": {
+        "name": "Operating Systems Design Principles",
+        "credits": 3,
+        "prerequisites": ["COP4600"],
+        "description": "Advanced OS concepts and distributed systems"
+      },
+      "COP5621": {
+        "name": "Compiler Construction",
+        "credits": 3,
+        "prerequisites": ["COP4020", "COT4210"],
+        "description": "Compiler design and optimization techniques"
+      },
+      "COP5711": {
+        "name": "Parallel and Distributed Database Systems",
+        "credits": 3,
+        "prerequisites": ["COP4710"],
+        "description": "Parallel DBMS and distributed database design"
+      },
+      "COT5405": {
+        "name": "Design and Analysis of Algorithms",
+        "credits": 3,
+        "prerequisites": ["COT4210"],
+        "description": "Algorithm classification and complexity analysis"
+      },
+      "COT5600": {
+        "name": "Quantum Computing",
+        "credits": 3,
+        "prerequisites": ["COP3503C"],
+        "description": "Quantum circuits and quantum algorithms"
+      },
+      "EEE4346C": {
+        "name": "Hardware Security and Trusted Circuit Design",
+        "credits": 3,
+        "prerequisites": ["EEL3801C"],
+        "description": "Sequential logic circuits and hardware security"
+      },
+      "EEL5780": {
+        "name": "Wireless Networks",
+        "credits": 3,
+        "prerequisites": ["EEL4781"],
+        "description": "Cellular networks and wireless protocols"
+      },
+      "EEL5820": {
+        "name": "Image Processing",
+        "credits": 3,
+        "prerequisites": ["MAP2302", "EEL4750"],
+        "description": "Signal processing and image enhancement"
+      },
+      "EGN4630": {
+        "name": "Entrepreneurship for Defense",
+        "credits": 3,
+        "prerequisites": ["ENC1101"],
+        "description": "Lean Startup for Defense and Intelligence",
+        "note": "Cannot take both EGN4630 and EGN5640"
+      },
+      "EGN5640": {
+        "name": "Entrepreneurship for Defense",
+        "credits": 3,
+        "prerequisites": [],
+        "description": "Graduate-level Defense entrepreneurship",
+        "note": "Cannot take both EGN4630 and EGN5640"
+      },
+      "MAP4384": {
+        "name": "Numerical Methods for Computational Sciences",
+        "credits": 3,
+        "prerequisites": ["MAP2302", "COP3223C", {"options": ["MAS3105", "MAS3106"]}],
+        "description": "Numerical computation and finite element methods"
+      },
+      "PHY3650": {
+        "name": "Quantum Information Processing",
+        "credits": 3,
+        "prerequisites": [{"options": ["PHY2049C", "PHY2049"]}, {"options": ["MAC2313", "MAS3105"]}],
+        "description": "Quantum computation and communications"
+      }
+    }
+  },
+  "program_requirements": {
+    "minimum_credits": 120,
+    "unduplicated_credit_hours": true,
+    "grade_requirement": "C (2.0) or better",
+    "gep_requirement": "Must satisfy GEP requirement",
+    "programming_course_note": "Any programming course satisfies prerequisite for these courses",
+    "elective_requirements": {
+      "cs_it_restricted_electives": {
+        "count": 2,
+        "description": "CS/IT 3/4xxx Restricted Elective",
+        "note": "Choose from 4000-4899 level CS Department courses not already required",
+        "restrictions": [
+          "Cannot take CIS4340, ISC4551, or COP4283 (for CS majors)",
+          "5000-5899 graduate courses allowed with restrictions",
+          "Must pass CS Foundation Exam for graduate courses",
+          "3.0+ GPA required for graduate courses",
+          "COP3503 with B grade required for graduate courses",
+          "Limited to 3 graduate courses total (4 for BS to MS students)"
+        ]
+      },
+      "2000_level_courses": {
+        "count": 2,
+        "description": "Complete two 2000-level or higher courses with specified prefixes",
+        "note": "COP2500 counts here!"
+      },
+      "prefixes": {
+        "cs_it": ["CAP", "CGS", "CDA", "CIS", "CNT", "COP", "COT"],
+        "engineering": ["BME", "CCE", "CEG", "CES", "CGN", "CWR", "EAS", "EEE", "EEL", "EGN", "EIN", "EMA", "EML", "ENV", "ESI", "TTE"],
+        "mathematics": ["MAA", "MAC", "MAD", "MAP", "MAS", "MTG", "STA"],
+        "science": ["BCH", "BOT", "BSC", "CHM", "CHS", "MCB", "PCB", "PHY", "PHZ", "ZOO"]
+      }
+    }
+  }
+}

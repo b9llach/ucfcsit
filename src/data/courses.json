@@ -1,0 +1,292 @@
+{
+  "courses": {
+    "MAC1105C": {
+      "name": "College Algebra", 
+      "credits": 3,
+      "prerequisites": [],
+      "corequisites": [],
+      "alternatives": ["MAC1140"],
+      "gep_requirement": false
+    },
+    "MAC1140": {
+      "name": "Pre-Calc Algebra",
+      "credits": 3, 
+      "prerequisites": [],
+      "corequisites": [],
+      "alternatives": ["MAC1105C"],
+      "gep_requirement": false
+    },
+    "MAC1114C": {
+      "name": "College Trigonometry",
+      "credits": 3,
+      "prerequisites": [
+        {
+          "options": ["MAC1105C", "MAC1140"]
+        }
+      ],
+      "corequisites": [],
+      "gep_requirement": false
+    },
+    "STA2023": {
+      "name": "Statistical Methods 1",
+      "credits": 3,
+      "prerequisites": [
+        {
+          "options": ["MAC1105C", "MAC1140"]
+        }
+      ],
+      "corequisites": [],
+      "gep_requirement": true
+    },
+    "PHY2053": {
+      "name": "Physics I",
+      "credits": 3,
+      "prerequisites": ["MAC1114C"],
+      "corequisites": ["PHY2053L"],
+      "gep_requirement": true
+    },
+    "PHY2053L": {
+      "name": "Physics I Lab", 
+      "credits": 1,
+      "prerequisites": ["MAC1114C"],
+      "corequisites": ["PHY2053"],
+      "gep_requirement": true
+    },
+    "PHY2054": {
+      "name": "Physics II",
+      "credits": 3,
+      "prerequisites": ["PHY2053", "PHY2053L"],
+      "corequisites": ["PHY2054L"],
+      "gep_requirement": true
+    },
+    "PHY2054L": {
+      "name": "Physics II Lab",
+      "credits": 1, 
+      "prerequisites": ["PHY2053", "PHY2053L"],
+      "corequisites": ["PHY2054"],
+      "gep_requirement": true
+    },
+    "COP2500C": {
+      "name": "Concepts in CS",
+      "credits": 3,
+      "prerequisites": [],
+      "corequisites": ["CIS3003"],
+      "alternatives": ["CS Placement"],
+      "gep_requirement": false
+    },
+    "CIS3003": {
+      "name": "Fundamentals of Info. Technology", 
+      "credits": 3,
+      "prerequisites": [],
+      "corequisites": ["COP2500C"],
+      "gep_requirement": false
+    },
+    "COP3223C": {
+      "name": "Programming in C",
+      "credits": 3,
+      "prerequisites": ["COP2500C"],
+      "corequisites": [],
+      "gep_requirement": false
+    },
+    "CIS3990": {
+      "name": "IT Advising I",
+      "credits": 0,
+      "prerequisites": ["COP3223C"],
+      "corequisites": ["CNT3004"],
+      "gep_requirement": false
+    },
+    "CNT3004": {
+      "name": "Computer Network Concepts",
+      "credits": 3,
+      "prerequisites": ["PHY2053", "PHY2053L"],
+      "corequisites": ["CIS3990"],
+      "gep_requirement": false
+    },
+    "CIS4004": {
+      "name": "Web-based Information Technology",
+      "credits": 3,
+      "prerequisites": ["CNT3004"],
+      "corequisites": [],
+      "gep_requirement": false
+    },
+    "CIS3921": {
+      "name": "Careers in IT", 
+      "credits": 1,
+      "prerequisites": ["CIS3990"],
+      "corequisites": [],
+      "gep_requirement": false
+    },
+    "CIS4991": {
+      "name": "IT Advising II",
+      "credits": 0,
+      "prerequisites": ["CIS3921"],
+      "corequisites": ["COP4910"],
+      "gep_requirement": false
+    },
+    "CIS3360": {
+      "name": "Security in Computing",
+      "credits": 3,
+      "prerequisites": ["COP3223C"],
+      "corequisites": [],
+      "gep_requirement": false
+    },
+    "COP3502C": {
+      "name": "Computer Science 1",
+      "credits": 3,
+      "prerequisites": ["COP3223C", 
+        {
+          "options": ["MAC1105C", "MAC1140"]
+        }
+      ],
+      "corequisites": [],
+      "gep_requirement": false
+    },
+    "CNT4703C": {
+      "name": "Network Laboratory",
+      "credits": 3,
+      "prerequisites": ["COP3502C", "MAD2104"],
+      "corequisites": ["COP4910"],
+      "gep_requirement": false
+    },
+    "PHI3626": {
+      "name": "Ethics in Science and Technology",
+      "credits": 3,
+      "prerequisites": ["COP3502C"],
+      "corequisites": [],
+      "gep_requirement": false
+    },
+    "CIS4524": {
+      "name": "Managing IT Integration",
+      "credits": 3,
+      "prerequisites": ["COP3223C", "CGS2545C"],
+      "corequisites": [],
+      "gep_requirement": false
+    },
+    "CGS2545C": {
+      "name": "Databases",
+      "credits": 3,
+      "prerequisites": [],
+      "corequisites": [],
+      "programming_prerequisite": true,
+      "gep_requirement": false
+    },
+    "CAP3104": {
+      "name": "Human-Computer Interaction",
+      "credits": 3,
+      "prerequisites": ["CGS2545C"],
+      "corequisites": [],
+      "gep_requirement": false
+    },
+    "MAD2104": {
+      "name": "Discrete Math",
+      "credits": 3,
+      "prerequisites": [],
+      "corequisites": [],
+      "gep_requirement": false
+    },
+    "CNT4714": {
+      "name": "Enterprise Computing", 
+      "credits": 3,
+      "prerequisites": ["MAD2104", "CGS3269"],
+      "corequisites": [],
+      "gep_requirement": false
+    },
+    "CGS3269": {
+      "name": "Computer Architecture Concepts",
+      "credits": 3,
+      "prerequisites": [],
+      "corequisites": [],
+      "programming_prerequisite": true,
+      "gep_requirement": false
+    },
+    "CGS3763": {
+      "name": "Operating System Concepts",
+      "credits": 3,
+      "prerequisites": [],
+      "corequisites": [],
+      "programming_prerequisite": true,
+      "gep_requirement": false
+    },
+    "CNT4603": {
+      "name": "System Admin and Maintenance",
+      "credits": 3,
+      "prerequisites": ["CGS3763"],
+      "corequisites": [],
+      "gep_requirement": false
+    },
+    "COP4910": {
+      "name": "Frontiers in Information Technology",
+      "credits": 3,
+      "prerequisites": ["CNT4603"],
+      "corequisites": ["CNT4703C", "CIS4991"],
+      "gep_requirement": false
+    },
+    "PSY2012": {
+      "name": "Psychology",
+      "credits": 3,
+      "prerequisites": [],
+      "corequisites": [],
+      "gep_requirement": true,
+      "category": "GEP Requirement"
+    },
+    "ECO2013": {
+      "name": "Macroeconomics", 
+      "credits": 3,
+      "prerequisites": [],
+      "corequisites": [],
+      "gep_requirement": true,
+      "category": "GEP Requirement"
+    },
+    "ENC3241": {
+      "name": "Technical Report Writing",
+      "credits": 3,
+      "prerequisites": [],
+      "corequisites": [],
+      "alternatives": ["ENC3250"],
+      "category": "Technical Writing Requirement",
+      "gep_requirement": false
+    },
+    "ENC3250": {
+      "name": "Technical Report Writing",
+      "credits": 3,
+      "prerequisites": [],
+      "corequisites": [],
+      "alternatives": ["ENC3241"], 
+      "category": "Technical Writing Requirement",
+      "gep_requirement": false
+    },
+    "ENC4XXX": {
+      "name": "See Degree Audit for List",
+      "credits": 3,
+      "prerequisites": [],
+      "corequisites": [],
+      "category": "Technical Writing Requirement",
+      "gep_requirement": false
+    }
+  },
+  "program_requirements": {
+    "minimum_credits": 120,
+    "unduplicated_credit_hours": true,
+    "grade_requirement": "C (2.0) or better",
+    "gep_requirement": "Must satisfy GEP requirement",
+    "programming_course_note": "Any programming course satisfies prerequisite for these courses",
+    "elective_requirements": {
+      "cs_it_restricted_electives": {
+        "count": 2,
+        "description": "CS/IT 3/4xxx Restricted Elective",
+        "available_courses": "See course catalog document for full list"
+      },
+      "2000_level_courses": {
+        "count": 2,
+        "description": "Complete two 2000-level or higher courses with specified prefixes",
+        "note": "COP2500 counts here!"
+      },
+      "prefixes": {
+        "cs_it": ["CAP", "CGS", "CDA", "CIS", "CNT", "COP", "COT"],
+        "engineering": ["BME", "CCE", "CEG", "CES", "CGN", "CWR", "EAS", "EEE", "EEL", "EGN", "EIN", "EMA", "EML", "ENV", "ESI", "TTE"],
+        "mathematics": ["MAA", "MAC", "MAD", "MAP", "MAS", "MTG", "STA"],
+        "science": ["BCH", "BOT", "BSC", "CHM", "CHS", "MCB", "PCB", "PHY", "PHZ", "ZOO"]
+      }
+    }
+  }
+}
