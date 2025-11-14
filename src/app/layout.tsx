@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "UCF CS/IT Course Planner",
-  description: "Plan your UCF Computer Science and Information Technology degree path",
+  title: "DegreeMe",
+  description: "Plan smarter. Graduate faster.",
 };
 
 export default function RootLayout({
