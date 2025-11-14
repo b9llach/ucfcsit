@@ -4,7 +4,7 @@ import { signIn, useSession } from "next-auth/react"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import Link from "next/link"
 
 export default function LoginPage() {
   const { data: session, status } = useSession()
@@ -21,7 +21,7 @@ export default function LoginPage() {
   const handleGoogleSignIn = async () => {
     setIsSigningIn(true)
     try {
-      const result = await signIn("google", { 
+      const result = await signIn("google", {
         callbackUrl: "/dashboard",
         redirect: true
       })
@@ -37,61 +37,70 @@ export default function LoginPage() {
 
   if (status === "loading") {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto mb-4"></div>
-          <div className="text-lg text-gray-600 font-medium">Loading...</div>
-        </div>
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="w-16 h-16 border-4 border-gray-200 border-t-accent rounded-full animate-spin"></div>
       </div>
     )
   }
 
   if (status === "authenticated") {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto mb-4"></div>
-          <div className="text-lg text-gray-600 font-medium">Redirecting to dashboard...</div>
-        </div>
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="w-16 h-16 border-4 border-gray-200 border-t-accent rounded-full animate-spin"></div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="text-center">
-          <h2 className="text-3xl font-bold text-gray-900">
-            UCF CS/IT Course Planner
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Plan your Computer Science and Information Technology degree path
-          </p>
-        </div>
+    <div className="min-h-screen bg-white flex flex-col justify-center relative overflow-hidden">
+      {/* Background Elements */}
+      <div
+        className="absolute inset-0 opacity-40"
+        style={{
+          background: 'radial-gradient(circle at 50% 0%, rgba(0, 113, 227, 0.08) 0%, transparent 60%)'
+        }}
+      />
+
+      {/* Back to Home */}
+      <div className="absolute top-8 left-8">
+        <Link href="/" className="flex items-center space-x-2 text-muted-foreground hover:text-foreground transition-all-smooth group">
+          <svg className="w-5 h-5 group-hover:-translate-x-1 transition-all-smooth" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          <span className="font-medium text-[15px]">Back to Home</span>
+        </Link>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-6 shadow rounded-lg border border-gray-200">
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-medium text-gray-900 text-center mb-6">
-                Sign in to your account
-              </h3>
-              
-              <Button 
+      <div className="relative z-10 py-12 px-6 lg:px-8">
+        {/* Logo and Header */}
+        <div className="sm:mx-auto sm:w-full sm:max-w-md mb-10 animate-fade-in-up">
+          <h1 className="text-center text-5xl sm:text-6xl font-semibold text-black tracking-tight mb-4">
+            Welcome back
+          </h1>
+          <p className="text-center text-[19px] text-muted-foreground max-w-sm mx-auto leading-[1.47]">
+            Sign in to continue planning your degree journey
+          </p>
+        </div>
+
+        {/* Sign In Card */}
+        <div className="sm:mx-auto sm:w-full sm:max-w-md animate-scale-in animation-delay-150">
+          <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-black/10 p-10">
+            <div className="space-y-6">
+              {/* Google Sign In Button */}
+              <Button
                 onClick={handleGoogleSignIn}
                 disabled={isSigningIn}
-                className="w-full bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 justify-center py-3 disabled:opacity-70 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                className="w-full bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 justify-center h-14 text-[17px] font-semibold rounded-full transition-all-smooth hover:scale-[1.02] hover:shadow-xl disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
                 size="lg"
               >
                 {isSigningIn ? (
                   <>
-                    <div className="w-5 h-5 border-2 border-gray-300 border-t-gray-700 rounded-full animate-spin mr-3"></div>
+                    <div className="w-5 h-5 border-2 border-gray-300 border-t-gray-900 rounded-full animate-spin mr-3"></div>
                     Signing in...
                   </>
                 ) : (
                   <>
-                    <svg className="mr-3 h-5 w-5" viewBox="0 0 24 24">
+                    <svg className="mr-3 h-6 w-6" viewBox="0 0 24 24">
                       <path
                         d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
                         fill="#4285F4"
@@ -113,21 +122,55 @@ export default function LoginPage() {
                   </>
                 )}
               </Button>
-            </div>
-            
-            <div className="text-center">
-              <p className="text-xs text-gray-500">
-                Sign in to save your course progress and share your schedule with others
-              </p>
+
+              {/* Divider */}
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-200"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-4 bg-white text-muted-foreground font-medium">
+                    Quick and secure
+                  </span>
+                </div>
+              </div>
+
+              {/* Info */}
+              <div className="space-y-3">
+                <div className="flex items-start space-x-3">
+                  <svg className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p className="text-[15px] text-muted-foreground leading-relaxed">
+                    Sign in with your Google account
+                  </p>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <svg className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                  <p className="text-[15px] text-muted-foreground leading-relaxed">
+                    Your data is encrypted and never shared
+                  </p>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <svg className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  <p className="text-[15px] text-muted-foreground leading-relaxed">
+                    Start planning your degree in seconds
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-        
-        <div className="mt-6 text-center">
-          <p className="text-sm text-gray-600">
-            University of Central Florida<br />
-            Computer Science & Information Technology
-          </p>
+
+          {/* Footer Text */}
+          <div className="mt-8 text-center">
+            <p className="text-[13px] text-muted-foreground">
+              DegreeMe
+            </p>
+          </div>
         </div>
       </div>
     </div>

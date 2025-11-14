@@ -4,11 +4,11 @@ import { useSession, signOut } from "next-auth/react"
 import { useState, useEffect, useMemo, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { 
+import { Badge } from "@/components/ui/badge"
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -61,15 +61,13 @@ function SchedulePageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const shareToken = searchParams.get('share')
-  
+
   const [courses, setCourses] = useState<Course[]>([])
   const [userCourses, setUserCourses] = useState<UserCourse[]>([])
   const [schedule, setSchedule] = useState<Schedule | null>(null)
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [isSharedView, setIsSharedView] = useState(false)
-  const [shareUrl, setShareUrl] = useState("")
-  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false)
   const [isSharing, setIsSharing] = useState(false)
 
   useEffect(() => {
@@ -106,15 +104,14 @@ function SchedulePageContent() {
         fetch("/api/courses/with-prerequisites"),
         fetch("/api/user/courses")
       ])
-      
+
       if (coursesRes.ok && userCoursesRes.ok) {
         const coursesData = await coursesRes.json()
         const userCoursesData = await userCoursesRes.json()
-        
+
         setCourses(Array.isArray(coursesData) ? coursesData : [])
         setUserCourses(Array.isArray(userCoursesData) ? userCoursesData : [])
-        
-        // Generate schedule automatically
+
         generateSchedule(coursesData, userCoursesData)
       }
     } catch (error) {
@@ -131,7 +128,7 @@ function SchedulePageContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ courses: allCourses, completedCourses })
       })
-      
+
       if (response.ok) {
         const data = await response.json()
         setSchedule(data.schedule)
@@ -143,33 +140,24 @@ function SchedulePageContent() {
 
   const shareSchedule = async () => {
     if (!schedule) return
-    
+
     try {
       setIsSharing(true)
       const response = await fetch(`/api/schedule/${schedule.id}/share`, {
         method: "POST"
       })
-      
+
       if (response.ok) {
         const data = await response.json()
         const url = `${window.location.origin}/schedule?share=${data.shareToken}`
-        setShareUrl(url)
-        setIsShareDialogOpen(true)
+        await navigator.clipboard.writeText(url)
+        toast.success("Schedule link copied to clipboard")
       }
     } catch (error) {
       console.error("Error sharing schedule:", error)
+      toast.error("Failed to share schedule")
     } finally {
       setIsSharing(false)
-    }
-  }
-
-  const copyToClipboard = async () => {
-    try {
-      await navigator.clipboard.writeText(shareUrl)
-      toast.success("🔗 Schedule link copied to clipboard!")
-    } catch (error) {
-      console.error("Failed to copy to clipboard:", error)
-      toast.error("Failed to copy link. Please try again.")
     }
   }
 
@@ -187,24 +175,21 @@ function SchedulePageContent() {
 
   const groupedSchedule = useMemo(() => {
     if (!schedule?.items) return {}
-    
+
     const grouped: { [key: string]: ScheduleItem[] } = {}
     schedule.items.forEach(item => {
       const key = `${item.semester} ${item.year}`
       if (!grouped[key]) grouped[key] = []
       grouped[key].push(item)
     })
-    
+
     return grouped
   }, [schedule])
 
   if (status === "loading" || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto mb-4"></div>
-          <div className="text-lg text-gray-600 font-medium">Loading schedule...</div>
-        </div>
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="w-16 h-16 border-4 border-gray-200 border-t-accent rounded-full animate-spin"></div>
       </div>
     )
   }
@@ -215,387 +200,204 @@ function SchedulePageContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 shadow-sm" role="banner">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center justify-between w-full">
-              <div className="flex items-center space-x-4">
-                <Link href="/" className="text-xl font-semibold text-gray-900 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-md" aria-label="UCF Course Planner home">
-                  <span className="hidden sm:inline">UCF CS/IT Course Planner</span>
-                  <span className="sm:hidden">UCF Planner</span>
-                </Link>
-                <span className="text-gray-300 hidden sm:inline">|</span>
-                <h1 className="text-base sm:text-lg font-medium text-gray-700">
-                  {isSharedView ? 'Shared Schedule' : 'My Course Schedule'}
-                </h1>
-              </div>
+    <div className="min-h-screen bg-white">
+      {/* Navigation */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-b border-black/10">
+        <div className="max-w-[1400px] mx-auto px-6">
+          <div className="flex justify-between items-center h-11">
+            <Link href="/" className="flex items-center transition-opacity hover:opacity-60">
+              <span className="font-semibold text-[17px] text-black tracking-tight">DegreeMe</span>
+            </Link>
+
+            <div className="flex items-center space-x-8">
               {!isSharedView && (
-                <nav className="flex space-x-1 bg-gray-100 rounded-lg p-1" role="tablist" aria-label="Page navigation">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => router.push('/dashboard')}
-                    className="px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 text-gray-600 hover:text-gray-900 hover:bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                    role="tab"
-                    aria-selected="false"
-                  >
-                    Classes
-                  </Button>
-                  <button className="px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 bg-white text-primary shadow-sm" role="tab" aria-selected="true">
+                <div className="hidden md:flex items-center space-x-8 text-[12px]">
+                  <Link href="/dashboard" className="text-black/70 hover:text-black transition-all-smooth">
+                    Overview
+                  </Link>
+                  <Link href="/dashboard/courses" className="text-black/70 hover:text-black transition-all-smooth">
+                    Courses
+                  </Link>
+                  <Link href="/dashboard/roadmap" className="text-black/70 hover:text-black transition-all-smooth">
+                    Roadmap
+                  </Link>
+                  <Link href="/dashboard/progress" className="text-black/70 hover:text-black transition-all-smooth">
+                    Progress
+                  </Link>
+                  <Link href="/schedule" className="text-black transition-all-smooth">
                     Schedule
-                  </button>
-                </nav>
+                  </Link>
+                </div>
               )}
-            </div>
-            <div className="flex items-center space-x-4">
+
               {session && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className="flex items-center space-x-3 bg-gray-50 rounded-full pl-3 pr-1 py-1 cursor-pointer hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2" aria-label="User menu" aria-expanded="false">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage 
-                          src={session?.user?.image || ""} 
-                          alt={session?.user?.name || "User"} 
-                        />
-                        <AvatarFallback className="bg-primary text-black">
-                          {session?.user?.name?.charAt(0)?.toUpperCase() || "U"}
+                    <button className="flex items-center hover:opacity-80 transition-all-smooth rounded-full focus:outline-none">
+                      <Avatar className="h-7 w-7 ring-1 ring-black/10">
+                        <AvatarImage src={session?.user?.image || ""} />
+                        <AvatarFallback className="bg-accent text-accent-foreground text-xs">
+                          {session?.user?.name?.charAt(0)?.toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="text-sm text-gray-700 hidden sm:block font-medium">
-                        {session?.user?.name?.split(' ')[0]}
-                      </span>
-                      <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
                     </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuLabel>
+                  <DropdownMenuContent align="end" className="w-48 bg-white border-black/10">
+                    <DropdownMenuLabel className="text-xs">
                       <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">{session?.user?.name}</p>
-                        <p className="text-xs leading-none text-muted-foreground">
-                          {session?.user?.email}
-                        </p>
+                        <p className="font-medium text-black">{session?.user?.name}</p>
+                        <p className="text-muted-foreground">{session?.user?.email}</p>
                       </div>
                     </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
+                    <DropdownMenuSeparator className="bg-black/10" />
                     <DropdownMenuItem asChild>
-                      <Link href="/dashboard" className="cursor-pointer">
-                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                        </svg>
-                        Dashboard
-                      </Link>
+                      <Link href="/dashboard" className="text-black">Overview</Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link href="/schedule" className="cursor-pointer">
-                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        Schedule
-                      </Link>
+                      <Link href="/schedule" className="text-black">Schedule</Link>
                     </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem 
-                      onClick={() => signOut({ callbackUrl: "/" })}
-                      className="text-red-600 focus:text-red-600 cursor-pointer"
-                    >
-                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                      </svg>
+                    <DropdownMenuSeparator className="bg-black/10" />
+                    <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/" })} className="text-destructive">
                       Sign Out
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
-              {isSharedView && (
-                <span className="text-sm text-gray-600">Shared Schedule</span>
-              )}
             </div>
           </div>
         </div>
-      </header>
+      </nav>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" role="main">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-8">
-          {/* Schedule View */}
-          <section className="lg:col-span-2" aria-label="Semester schedule">
-            <Card className="bg-white">
-              <CardHeader className="bg-white">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-gray-900">Semester Schedule</CardTitle>
-                  {!isSharedView && schedule && (
-                    <Dialog open={isShareDialogOpen} onOpenChange={setIsShareDialogOpen}>
-                      <DialogTrigger asChild>
-                        <Button 
-                          onClick={shareSchedule} 
-                          variant="outline" 
-                          size="sm"
-                          disabled={isSharing}
-                          className="cursor-pointer hover:scale-105 transition-all duration-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                        >
-                          {isSharing ? (
-                            <>
-                              <svg className="w-4 h-4 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                              </svg>
-                              <span className="hidden sm:inline">Sharing...</span>
-                              <span className="sm:hidden">...</span>
-                            </>
-                          ) : (
-                            <>
-                              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
-                              </svg>
-                              <span className="hidden sm:inline">Share Schedule</span>
-                              <span className="sm:hidden">Share</span>
-                            </>
-                          )}
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="sm:max-w-md bg-white">
-                        <DialogHeader>
-                          <DialogTitle className="text-gray-900">Share Your Schedule</DialogTitle>
-                          <DialogDescription className="text-gray-600">
-                            Share your course schedule with others using this link.
-                          </DialogDescription>
-                        </DialogHeader>
-                        <div className="flex items-center space-x-2">
-                          <div className="grid flex-1 gap-2">
-                            <Input
-                              readOnly
-                              value={shareUrl}
-                              className="bg-gray-50 border-gray-300 text-gray-900"
-                            />
+      {/* Main Content */}
+      <main className="pt-20 pb-16 px-6">
+        <div className="max-w-[1400px] mx-auto">
+          {/* Header */}
+          <div className="mb-8">
+            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-3">
+              <h1 className="text-5xl font-semibold text-black tracking-tight">
+                {isSharedView ? "Shared Schedule" : "Schedule"}
+              </h1>
+              {!isSharedView && schedule && (
+                <Button
+                  onClick={shareSchedule}
+                  disabled={isSharing}
+                  variant="outline"
+                  className="bg-white text-black hover:bg-gray-50 border-black/20 px-6 h-10 text-[13px] rounded-full transition-all-smooth"
+                >
+                  <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
+                  </svg>
+                  {isSharing ? "Sharing..." : "Share"}
+                </Button>
+              )}
+            </div>
+            <p className="text-[19px] text-muted-foreground">
+              {isSharedView ? "Viewing a shared semester-by-semester plan" : "Your semester-by-semester degree plan"}
+            </p>
+          </div>
+
+          {Object.keys(groupedSchedule).length === 0 ? (
+            <Card className="border-black/10 bg-white">
+              <CardContent className="py-20 text-center">
+                <svg className="w-16 h-16 mx-auto text-black/20 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <h3 className="text-xl font-semibold text-black mb-2">No Schedule Generated</h3>
+                <p className="text-[15px] text-muted-foreground mb-6">
+                  {!isSharedView ? "Complete courses in your dashboard to generate a personalized schedule" : "This schedule hasn't been generated yet"}
+                </p>
+                {!isSharedView && (
+                  <Link href="/dashboard/courses">
+                    <Button className="bg-accent hover:bg-accent/90 text-accent-foreground px-6 h-10 text-[13px] rounded-full transition-all-smooth">
+                      Go to Courses
+                    </Button>
+                  </Link>
+                )}
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-6">
+              {Object.entries(groupedSchedule)
+                .sort(([a], [b]) => {
+                  const [semA, yearA] = a.split(' ')
+                  const [semB, yearB] = b.split(' ')
+                  if (yearA !== yearB) return parseInt(yearA) - parseInt(yearB)
+                  const semOrder = { Fall: 1, Spring: 2, Summer: 3 }
+                  return semOrder[semA as keyof typeof semOrder] - semOrder[semB as keyof typeof semOrder]
+                })
+                .map(([semester, items], index) => {
+                  const totalCredits = items.reduce((sum, item) => sum + item.course.credits, 0)
+                  return (
+                    <Card key={semester} className="border-black/10 bg-white">
+                      <CardHeader className="pb-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <CardTitle className="text-2xl text-black">{semester}</CardTitle>
+                            <CardDescription className="text-[13px] text-muted-foreground mt-1">
+                              {totalCredits} credit hours • {items.length} courses
+                            </CardDescription>
                           </div>
-                          <Button 
-                            type="submit" 
-                            size="sm" 
-                            onClick={copyToClipboard}
-                            className="cursor-pointer hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                          >
-                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                            </svg>
-                            Copy
-                          </Button>
+                          <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-200 text-[13px]">
+                            Semester {index + 1}
+                          </Badge>
                         </div>
-                        <DialogFooter className="sm:justify-start">
-                          <div className="flex items-center text-sm text-gray-500">
-                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            Anyone with this link can view your schedule
-                          </div>
-                        </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent className="bg-white">
-                {Object.keys(groupedSchedule).length === 0 ? (
-                  <div className="text-center py-12 text-gray-500">
-                    <svg className="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                    </svg>
-                    <h3 className="text-lg font-medium text-gray-700 mb-2">No Schedule Generated</h3>
-                    {!isSharedView ? (
-                      <div>
-                        <p className="text-gray-500 mb-4">
-                          Generate a personalized course schedule to see your degree plan laid out semester by semester. Perfect for prospective students or planning your academic path!
-                        </p>
-                        <Link href="/dashboard" className="inline-flex items-center px-4 py-2 bg-primary text-black rounded-lg hover:bg-primary/90 transition-colors">
-                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                          </svg>
-                          Go to Dashboard
-                        </Link>
-                      </div>
-                    ) : (
-                      <p className="text-gray-500">
-                        This schedule hasn&apos;t been generated yet.
-                      </p>
-                    )}
-                  </div>
-                ) : (
-                  <div className="space-y-6">
-                    {Object.entries(groupedSchedule)
-                      .sort(([a], [b]) => {
-                        const [semA, yearA] = a.split(' ')
-                        const [semB, yearB] = b.split(' ')
-                        if (yearA !== yearB) return parseInt(yearA) - parseInt(yearB)
-                        const semOrder = { Fall: 1, Spring: 2, Summer: 3 }
-                        return semOrder[semA as keyof typeof semOrder] - semOrder[semB as keyof typeof semOrder]
-                      })
-                      .map(([semester, items]) => (
-                        <div key={semester} className="bg-white border border-gray-200 rounded-lg p-4">
-                          <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                            {semester}
-                          </h3>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            {items.map((item) => (
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {items.map((item) => {
+                            const isCompleted = getCompletedCourseIds().includes(item.courseId)
+                            return (
                               <div
                                 key={item.id}
-                                className="p-3 bg-blue-50 border border-blue-200 rounded-lg"
+                                className={`p-4 rounded-xl border transition-all-smooth ${
+                                  isCompleted
+                                    ? 'bg-green-50/30 border-green-200'
+                                    : 'bg-white border-black/10 hover:border-black/20'
+                                }`}
                               >
-                                <div className="font-medium text-blue-900">
-                                  {item.course.code}
+                                <div className="flex justify-between items-start mb-2">
+                                  <h4 className="font-semibold text-[15px] text-black">{item.course.code}</h4>
+                                  <Badge variant="secondary" className="text-[11px] rounded-full bg-white border-black/10">
+                                    {item.course.credits} cr
+                                  </Badge>
                                 </div>
-                                <div className="text-sm text-blue-700">
+                                <p className="text-[13px] text-muted-foreground line-clamp-2 mb-3">
                                   {item.course.name}
-                                </div>
-                                <div className="text-xs text-blue-600 mt-1">
-                                  {item.course.credits} credits
-                                </div>
-                                {item.course.prerequisites && item.course.prerequisites.length > 0 && (
-                                  <div className="mt-2 pt-2 border-t border-blue-200">
-                                    <div className="text-xs text-blue-800 font-medium mb-1">Prerequisites:</div>
-                                    <div className="flex flex-wrap gap-1">
-                                      {item.course.prerequisites.map((prereq, index) => (
-                                        <span 
-                                          key={index}
-                                          className="inline-block px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded border"
-                                        >
-                                          {prereq.prerequisite.code}
-                                        </span>
-                                      ))}
-                                    </div>
-                                  </div>
+                                </p>
+                                {isCompleted && (
+                                  <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200 text-[11px]">
+                                    Completed
+                                  </Badge>
                                 )}
-                                {item.course.corequisites && item.course.corequisites.length > 0 && (
-                                  <div className="mt-2 pt-2 border-t border-blue-200">
-                                    <div className="text-xs text-blue-800 font-medium mb-1">Corequisites:</div>
-                                    <div className="flex flex-wrap gap-1">
-                                      {item.course.corequisites.map((coreq, index) => (
-                                        <span 
-                                          key={index}
-                                          className="inline-block px-2 py-0.5 bg-orange-100 text-orange-800 text-xs rounded border"
-                                        >
-                                          {coreq.corequisite.code}
-                                        </span>
-                                      ))}
-                                    </div>
+                                {item.course.prerequisites && item.course.prerequisites.length > 0 && !isCompleted && (
+                                  <div className="flex flex-wrap gap-1 mt-2">
+                                    <span className="text-[11px] text-muted-foreground mr-1">Prereqs:</span>
+                                    {item.course.prerequisites.slice(0, 2).map((prereq, idx) => (
+                                      <Badge
+                                        key={idx}
+                                        variant="secondary"
+                                        className="text-[10px] bg-gray-100 text-gray-700 border-gray-200"
+                                      >
+                                        {prereq.prerequisite.code}
+                                      </Badge>
+                                    ))}
+                                    {item.course.prerequisites.length > 2 && (
+                                      <Badge variant="secondary" className="text-[10px] bg-gray-100 text-gray-700 border-gray-200">
+                                        +{item.course.prerequisites.length - 2}
+                                      </Badge>
+                                    )}
                                   </div>
                                 )}
                               </div>
-                            ))}
-                          </div>
-                          <div className="mt-2 text-sm text-gray-600">
-                            Total Credits: {items.reduce((sum, item) => sum + item.course.credits, 0)}
-                          </div>
+                            )
+                          })}
                         </div>
-                      ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </section>
-
-          {/* Course Search Results */}
-          <section className="lg:col-span-2" aria-label="Course search">
-            <Card className="bg-white">
-              <CardHeader className="bg-white">
-                <div className="flex flex-col space-y-4">
-                  <CardTitle className="text-gray-900">Course Search</CardTitle>
-                  {/* Search Bar */}
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                      </svg>
-                    </div>
-                    <Input
-                      type="text"
-                      placeholder="Search courses by code or name..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10 bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:ring-primary focus:border-primary"
-                      aria-label="Search courses"
-                    />
-                    {searchQuery && (
-                      <button
-                        onClick={() => setSearchQuery("")}
-                        className="absolute inset-y-0 right-0 pr-3 flex items-center focus:outline-none focus:ring-2 focus:ring-primary rounded-md"
-                        aria-label="Clear search"
-                      >
-                        <svg className="h-4 w-4 text-gray-400 hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                    )}
-                  </div>
-                  {searchQuery && (
-                    <p className="text-sm text-gray-600">
-                      {filteredCourses.length} course{filteredCourses.length !== 1 ? 's' : ''} found for &quot;<span className="font-medium">{searchQuery}</span>&quot;
-                    </p>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent className="bg-white">
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-3 max-h-96 overflow-y-auto">
-                  {filteredCourses.slice(0, 40).map((course) => {
-                    const isCompleted = getCompletedCourseIds().includes(course.id)
-                    const isScheduled = schedule?.items.some(item => item.courseId === course.id)
-                    
-                    return (
-                      <div
-                        key={course.id}
-                        className={`p-3 border rounded-lg transition-all duration-200 hover:shadow-md ${
-                          isCompleted
-                            ? 'bg-green-50 border-green-200 hover:bg-green-100'
-                            : isScheduled
-                            ? 'bg-blue-50 border-blue-200 hover:bg-blue-100'
-                            : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
-                        }`}
-                      >
-                        <div className="font-medium text-sm text-gray-900">
-                          {course.code}
-                          {isCompleted && (
-                            <span className="ml-2 text-xs bg-green-500 text-white px-2 py-1 rounded">
-                              Completed
-                            </span>
-                          )}
-                          {isScheduled && !isCompleted && (
-                            <span className="ml-2 text-xs bg-blue-500 text-white px-2 py-1 rounded">
-                              Scheduled
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-xs text-gray-700 mt-1">
-                          {course.name}
-                        </div>
-                        <div className="text-xs text-gray-600 mt-1">
-                          {course.credits} credits
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-                {filteredCourses.length === 0 && searchQuery && (
-                  <div className="text-center py-8 text-gray-500">
-                    <svg className="w-12 h-12 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                    <p className="text-gray-600">No courses found matching &quot;{searchQuery}&quot;</p>
-                    <button 
-                      onClick={() => setSearchQuery("")}
-                      className="mt-2 text-primary hover:text-primary/80 text-sm"
-                    >
-                      Clear search
-                    </button>
-                  </div>
-                )}
-                {filteredCourses.length > 40 && (
-                  <div className="text-center pt-3 text-sm text-gray-500">
-                    Showing first 40 results. Use search to narrow down.
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </section>
+                      </CardContent>
+                    </Card>
+                  )
+                })}
+            </div>
+          )}
         </div>
       </main>
     </div>
@@ -605,11 +407,8 @@ function SchedulePageContent() {
 export default function SchedulePage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto mb-4"></div>
-          <div className="text-lg text-gray-600 font-medium">Loading schedule...</div>
-        </div>
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="w-16 h-16 border-4 border-gray-200 border-t-accent rounded-full animate-spin"></div>
       </div>
     }>
       <SchedulePageContent />

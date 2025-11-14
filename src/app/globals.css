@@ -1,26 +1,46 @@
 @import "tailwindcss";
 
+/* Apple SF Pro Font Stack */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
 :root {
+  /* Apple-inspired Color System - Light Mode Default */
   --background: #ffffff;
-  --foreground: #333333;
-  --card: #ffffff;
-  --card-foreground: #333333;
+  --foreground: #000000;
+  --card: #fbfbfd;
+  --card-foreground: #000000;
   --popover: #ffffff;
-  --popover-foreground: #333333;
-  --primary: #FFC904;
-  --primary-foreground: #000000;
-  --secondary: #f8f9fa;
-  --secondary-foreground: #333333;
-  --muted: #f8f9fa;
-  --muted-foreground: #6c757d;
-  --accent: #f8f9fa;
-  --accent-foreground: #333333;
-  --destructive: #dc3545;
+  --popover-foreground: #000000;
+
+  /* Primary Brand Color */
+  --primary: #0071e3;
+  --primary-foreground: #ffffff;
+
+  /* Apple Gray Scale */
+  --secondary: #f5f5f7;
+  --secondary-foreground: #000000;
+  --muted: #f5f5f7;
+  --muted-foreground: #86868b;
+  --accent: #0071e3;
+  --accent-foreground: #ffffff;
+
+  --destructive: #ff3b30;
   --destructive-foreground: #ffffff;
-  --border: #dee2e6;
+
+  /* Apple-style borders */
+  --border: #d2d2d7;
   --input: #ffffff;
-  --ring: #FFC904;
-  --radius: 0.375rem;
+  --ring: #0071e3;
+  --radius: 12px;
+
+  /* Glass morphism */
+  --glass-bg: rgba(255, 255, 255, 0.8);
+  --glass-border: rgba(255, 255, 255, 0.18);
+
+  /* Apple Gradients */
+  --gradient-blue: linear-gradient(135deg, #0071e3 0%, #00a3ff 100%);
+  --gradient-purple: linear-gradient(135deg, #a166ff 0%, #5e3aff 100%);
+  --gradient-green: linear-gradient(135deg, #30d158 0%, #06c755 100%);
 }
 
 @theme inline {
@@ -49,34 +69,97 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ffffff;
-    --card: #0a0a0a;
-    --card-foreground: #ffffff;
-    --popover: #0a0a0a;
-    --popover-foreground: #ffffff;
-    --primary: #FFC904;
+    /* Apple Dark Mode Colors */
+    --background: #000000;
+    --foreground: #f5f5f7;
+    --card: #1d1d1f;
+    --card-foreground: #f5f5f7;
+    --popover: #1d1d1f;
+    --popover-foreground: #f5f5f7;
+    --primary: #FFD60A;
     --primary-foreground: #000000;
-    --secondary: #1e293b;
-    --secondary-foreground: #f8fafc;
-    --muted: #1e293b;
-    --muted-foreground: #94a3b8;
-    --accent: #1e293b;
-    --accent-foreground: #f8fafc;
-    --destructive: #ef4444;
-    --destructive-foreground: #fefefe;
-    --border: #1e293b;
-    --input: #1e293b;
-    --ring: #FFC904;
+    --secondary: #1d1d1f;
+    --secondary-foreground: #f5f5f7;
+    --muted: #2c2c2e;
+    --muted-foreground: #86868b;
+    --accent: #0a84ff;
+    --accent-foreground: #ffffff;
+    --destructive: #ff453a;
+    --destructive-foreground: #ffffff;
+    --border: #38383a;
+    --input: #1d1d1f;
+    --ring: #0a84ff;
+
+    /* Glass morphism dark */
+    --glass-bg: rgba(29, 29, 31, 0.72);
+    --glass-border: rgba(255, 255, 255, 0.08);
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'SF Pro Display', 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+/* Custom Scrollbar - Apple Style */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+
+/* Firefox Scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+/* Apple-style Glass Morphism */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border: 1px solid var(--glass-border);
+}
+
+/* Apple-style smooth scrolling */
+* {
+  scroll-behavior: smooth;
+}
+
+/* Apple-style selection */
+::selection {
+  background-color: var(--accent);
+  color: white;
+}
+
+::-moz-selection {
+  background-color: var(--accent);
+  color: white;
+}
+
+/* Apple-style Animations */
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -88,10 +171,96 @@ body {
   }
 }
 
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+@keyframes pulse-subtle {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
 .animate-fade-in-up {
-  animation: fadeInUp 0.8s ease-out forwards;
+  animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
 }
 
 .animation-delay-150 {
   animation-delay: 150ms;
+}
+
+.animation-delay-300 {
+  animation-delay: 300ms;
+}
+
+.animation-delay-450 {
+  animation-delay: 450ms;
+}
+
+/* Apple-style transitions */
+.transition-apple {
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.transition-apple-fast {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.transition-all-smooth {
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Apple Gradient Text */
+.gradient-text {
+  background: linear-gradient(135deg, #0071e3 0%, #00a3ff 50%, #0071e3 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Smooth Parallax */
+.parallax-section {
+  transition: transform 0.1s ease-out;
 }
