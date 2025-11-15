@@ -17,6 +17,15 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "DegreeMe",
   description: "Plan smarter. Graduate faster.",
+  openGraph: {
+    title: "DegreeMe",
+    description: "Plan smarter. Graduate faster.",
+    url: "https://ucfcsit.vercel.app",
+    siteName: "DegreeMe",
+    images: [
+      { url: "/og-image.png" },
+    ],
+  },
 };
 
 export default function RootLayout({
