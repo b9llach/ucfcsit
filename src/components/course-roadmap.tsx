@@ -91,7 +91,19 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick }: RoadmapPr
     }
 
     // Calculate depths
-    requiredCourses.forEach(course => calculateDepth(course))
+    console.log('=== CALCULATING DEPTHS ===')
+    console.log('Total required courses:', requiredCourses.length)
+    console.log('Sample course with prereqs:', requiredCourses.find(c => c.prerequisites?.length > 0))
+
+    requiredCourses.forEach(course => {
+      const depth = calculateDepth(course)
+      console.log(`${course.code}: depth ${depth}, prerequisites: ${course.prerequisites?.length || 0}`)
+      if (course.prerequisites?.length > 0) {
+        course.prerequisites.forEach(p => {
+          console.log(`  - ${p.prerequisite.code} (id: ${p.prerequisite.id})`)
+        })
+      }
+    })
 
     // Group by depth level
     const depthGroups = new Map<number, Course[]>()
@@ -99,6 +111,11 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick }: RoadmapPr
       const depth = courseDepth.get(course.id) || 0
       if (!depthGroups.has(depth)) depthGroups.set(depth, [])
       depthGroups.get(depth)!.push(course)
+    })
+
+    console.log('\n=== DEPTH GROUPS ===')
+    Array.from(depthGroups.entries()).sort((a, b) => a[0] - b[0]).forEach(([depth, courses]) => {
+      console.log(`Depth ${depth}: ${courses.length} courses - ${courses.map(c => c.code).join(', ')}`)
     })
 
     // Compact tree layout

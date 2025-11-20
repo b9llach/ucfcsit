@@ -56,7 +56,7 @@ export default function RoadmapPage() {
   const fetchData = async () => {
     try {
       const [coursesRes, userCoursesRes] = await Promise.all([
-        fetch("/api/courses/with-prerequisites"),
+        fetch("/api/courses/roadmap"),
         fetch("/api/user/courses")
       ])
 
