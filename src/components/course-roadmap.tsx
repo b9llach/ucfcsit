@@ -87,25 +87,58 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick }: RoadmapPr
     const CARD_WIDTH = 200
     const CARD_HEIGHT = 110
     const HORIZONTAL_GAP = 160
-    const VERTICAL_GAP = 30
+    const VERTICAL_GAP = 40
     const START_X = 80
     const START_Y = 100
 
     const posMap = new Map<string, Position>()
     const sortedLevels = Array.from(levelGroups.keys()).sort((a, b) => a - b)
 
-    // Position courses in flowchart grid
+    // Position courses level by level, aligning with prerequisites for natural flow
     sortedLevels.forEach((level, levelIndex) => {
       const coursesInLevel = levelGroups.get(level)!
+      const x = START_X + levelIndex * (CARD_WIDTH + HORIZONTAL_GAP)
 
-      // Sort alphabetically within level
-      coursesInLevel.sort((a, b) => a.code.localeCompare(b.code))
+      // For each course, calculate average Y position of its prerequisites
+      const courseTargetY = new Map<string, number>()
 
-      coursesInLevel.forEach((course, index) => {
-        const x = START_X + levelIndex * (CARD_WIDTH + HORIZONTAL_GAP)
-        const y = START_Y + index * (CARD_HEIGHT + VERTICAL_GAP)
+      coursesInLevel.forEach(course => {
+        let targetY = START_Y
+        const prereqYs: number[] = []
+
+        if (course.prerequisites && course.prerequisites.length > 0) {
+          course.prerequisites.forEach(prereq => {
+            const prereqPos = posMap.get(prereq.prerequisite.id)
+            if (prereqPos && prereqPos.level < level) {
+              prereqYs.push(prereqPos.y)
+            }
+          })
+        }
+
+        // Align with average prerequisite position
+        if (prereqYs.length > 0) {
+          targetY = prereqYs.reduce((sum, y) => sum + y, 0) / prereqYs.length
+        } else {
+          // No prerequisites - position at bottom
+          targetY = 999999
+        }
+
+        courseTargetY.set(course.id, targetY)
+      })
+
+      // Sort courses by their target Y position for natural flow
+      const sortedCourses = [...coursesInLevel].sort((a, b) => {
+        return courseTargetY.get(a.id)! - courseTargetY.get(b.id)!
+      })
+
+      // Position courses, avoiding overlaps
+      let currentY = START_Y
+      sortedCourses.forEach(course => {
+        const targetY = courseTargetY.get(course.id)!
+        const y = Math.max(currentY, targetY)
 
         posMap.set(course.id, { x, y, level })
+        currentY = y + CARD_HEIGHT + VERTICAL_GAP
       })
     })
 
