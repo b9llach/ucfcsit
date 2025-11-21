@@ -186,8 +186,36 @@ function SchedulePageContent() {
   }
 
   const regenerateSchedules = async () => {
-    if (courses.length === 0) return
-    await generateSchedule(courses, userCourses)
+    try {
+      setIsGenerating(true)
+      // Fetch fresh data to ensure we have the latest completed courses and course data
+      const [coursesRes, userCoursesRes] = await Promise.all([
+        fetch("/api/courses/with-prerequisites"),
+        fetch("/api/user/courses")
+      ])
+
+      if (coursesRes.ok && userCoursesRes.ok) {
+        const freshCoursesData = await coursesRes.json()
+        const freshUserCoursesData = await userCoursesRes.json()
+
+        // Update state with fresh data
+        setCourses(Array.isArray(freshCoursesData) ? freshCoursesData : [])
+        setUserCourses(Array.isArray(freshUserCoursesData) ? freshUserCoursesData : [])
+
+        // Generate schedule with fresh data
+        await generateSchedule(
+          Array.isArray(freshCoursesData) ? freshCoursesData : [],
+          Array.isArray(freshUserCoursesData) ? freshUserCoursesData : []
+        )
+      } else {
+        toast.error("Failed to fetch latest course data")
+      }
+    } catch (error) {
+      console.error("Error regenerating schedule:", error)
+      toast.error("Failed to regenerate schedule")
+    } finally {
+      setIsGenerating(false)
+    }
   }
 
   const shareSchedule = async () => {
@@ -335,7 +363,7 @@ function SchedulePageContent() {
                     onClick={regenerateSchedules}
                     disabled={isGenerating}
                     variant="outline"
-                    className="bg-white text-black hover:bg-gray-50 border-black/20 px-6 h-10 text-[13px] rounded-full transition-all-smooth"
+                    className="bg-white text-black hover:bg-gray-50 hover:text-black border-black/20 px-6 h-10 text-[13px] rounded-full transition-all-smooth"
                     title="Generate new schedule variations"
                   >
                     <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -349,7 +377,7 @@ function SchedulePageContent() {
                     onClick={shareSchedule}
                     disabled={isSharing}
                     variant="outline"
-                    className="bg-white text-black hover:bg-gray-50 border-black/20 px-6 h-10 text-[13px] rounded-full transition-all-smooth"
+                    className="bg-white text-black hover:bg-gray-50 hover:text-black border-black/20 px-6 h-10 text-[13px] rounded-full transition-all-smooth"
                     title="Generate a shareable link to your schedule"
                   >
                     <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -471,13 +499,18 @@ function SchedulePageContent() {
                               >
                                 <div className="flex justify-between items-start mb-2">
                                   <h4 className="font-semibold text-[15px] text-black">{item.course.code}</h4>
-                                  <Badge variant="secondary" className="text-[11px] text-black rounded-full bg-white border-black/10 hover:bg-gray-100 hover:text-white">
+                                  <Badge variant="secondary" className="text-[11px] text-black rounded-full bg-white border-black/10 hover:bg-gray-100 hover:text-black">
                                     {item.course.credits} cr
                                   </Badge>
                                 </div>
-                                <p className="text-[13px] text-muted-foreground line-clamp-2 mb-3">
+                                <p className="text-[13px] font-medium text-black mb-1">
                                   {item.course.name}
                                 </p>
+                                {item.course.description && (
+                                  <p className="text-[12px] text-muted-foreground line-clamp-2 mb-3">
+                                    {item.course.description}
+                                  </p>
+                                )}
                                 {isCompleted && (
                                   <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200 text-[11px]">
                                     Completed

@@ -196,7 +196,7 @@ export default function FeedbackPage() {
                       rows={8}
                       required
                       placeholder="Tell us what you think..."
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent resize-none text-sm"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent resize-none text-sm text-black placeholder:text-gray-400"
                     />
                   </div>
 
