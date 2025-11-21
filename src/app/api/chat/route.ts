@@ -90,7 +90,7 @@ Be friendly, concise, and helpful. If you don't know something specific about a 
 
     // Initialize Gemini
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" })
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" })
 
     // Build conversation history for context
     const chatHistory = conversationHistory || []
