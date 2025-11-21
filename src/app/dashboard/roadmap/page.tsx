@@ -260,9 +260,10 @@ function RoadmapContent() {
                         variant="ghost"
                         size="sm"
                         onClick={() => setSelectedCourse(null)}
-                        className="h-8 w-8 p-0 rounded-full hover:bg-gray-100"
+                        className="h-8 w-8 p-0 rounded-full hover:bg-gray-100 text-gray-600 hover:text-gray-900 transition-colors"
+                        title="Close"
                       >
-                        <X className="h-4 w-4" />
+                        <X className="h-5 w-5" />
                       </Button>
                     </div>
                     <div className="flex flex-wrap gap-2 mt-3">

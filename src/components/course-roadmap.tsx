@@ -9,7 +9,10 @@ interface Course {
   code: string
   name: string
   credits: number
+  gepRequirement: boolean
   category: string | null
+  description: string | null
+  note: string | null
   isElective: boolean
   electiveLevel?: string | null
   prerequisites: { prerequisite: { id: string; code: string } }[]
@@ -670,7 +673,7 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick, focusedCour
                   </p>
 
                   <div className="flex items-center justify-between pt-2 border-t border-gray-300">
-                    <Badge variant="secondary" className="text-xs bg-white/80 border border-gray-300 px-2 py-0.5 font-semibold text-gray-900">
+                    <Badge variant="secondary" className="text-xs bg-white/80 hover:bg-white/80 border border-gray-300 px-2 py-0.5 font-semibold text-gray-900 hover:text-gray-900">
                       {course.credits} credits
                     </Badge>
                     {completed && (
@@ -751,7 +754,7 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick, focusedCour
                     </p>
 
                     <div className="flex items-center justify-between pt-2 border-t border-purple-300">
-                      <Badge variant="secondary" className="text-xs bg-white/80 border border-purple-300 px-2 py-0.5 font-semibold text-purple-900">
+                      <Badge variant="secondary" className="text-xs bg-white/80 hover:bg-white/80 border border-purple-300 px-2 py-0.5 font-semibold text-purple-900 hover:text-purple-900">
                         {course!.credits} credits
                       </Badge>
                       <span className="text-xs font-bold text-purple-700">ELECTIVE</span>
