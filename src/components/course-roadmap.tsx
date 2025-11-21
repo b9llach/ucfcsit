@@ -41,8 +41,15 @@ interface GraphNode {
 export function CourseRoadmap({ courses, userCourses, onCourseClick }: RoadmapProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const contentRef = useRef<HTMLDivElement>(null)
   const [positions, setPositions] = useState<Map<string, Position>>(new Map())
   const [hoveredCourse, setHoveredCourse] = useState<string | null>(null)
+
+  // Zoom and pan state
+  const [zoom, setZoom] = useState(1)
+  const [pan, setPan] = useState({ x: 0, y: 0 })
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
 
   const isCompleted = (courseId: string) => {
     return userCourses.some(uc => uc.courseId === courseId && uc.completed)
@@ -58,6 +65,48 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick }: RoadmapPr
     if (prereqsMet) return 'available'
 
     return 'locked'
+  }
+
+  // Zoom controls
+  const handleZoomIn = () => {
+    setZoom(prev => Math.min(prev + 0.2, 3))
+  }
+
+  const handleZoomOut = () => {
+    setZoom(prev => Math.max(prev - 0.2, 0.3))
+  }
+
+  const handleResetZoom = () => {
+    setZoom(1)
+    setPan({ x: 0, y: 0 })
+  }
+
+  // Mouse wheel zoom
+  const handleWheel = (e: React.WheelEvent) => {
+    e.preventDefault()
+    const delta = e.deltaY > 0 ? -0.1 : 0.1
+    setZoom(prev => Math.max(0.3, Math.min(3, prev + delta)))
+  }
+
+  // Pan controls
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (e.target === containerRef.current || (e.target as HTMLElement).closest('canvas')) {
+      setIsDragging(true)
+      setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y })
+    }
+  }
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (isDragging) {
+      setPan({
+        x: e.clientX - dragStart.x,
+        y: e.clientY - dragStart.y
+      })
+    }
+  }
+
+  const handleMouseUp = () => {
+    setIsDragging(false)
   }
 
   useEffect(() => {
@@ -354,7 +403,7 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick }: RoadmapPr
 
   return (
     <div className="relative w-full h-full flex flex-col bg-gradient-to-br from-gray-50 to-white rounded-2xl overflow-hidden border border-gray-200 shadow-inner">
-      {/* Header - Info and Legend (above scrollable area) */}
+      {/* Header - Info and Legend */}
       <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200 flex-shrink-0">
         {/* Course Progression Info */}
         <div className="flex items-center space-x-3">
@@ -363,6 +412,45 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick }: RoadmapPr
             <div className="text-xs text-gray-600">
               Left to Right: Foundational → Advanced
             </div>
+          </div>
+        </div>
+
+        {/* Center - Zoom Controls */}
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={handleZoomOut}
+            className="p-2 rounded-lg bg-white border border-gray-300 hover:bg-gray-50 hover:border-gray-400 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1"
+            aria-label="Zoom out"
+          >
+            <svg className="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+            </svg>
+          </button>
+
+          <div className="px-3 py-1.5 bg-gray-100 rounded-lg border border-gray-300">
+            <span className="text-xs font-semibold text-gray-700">{Math.round(zoom * 100)}%</span>
+          </div>
+
+          <button
+            onClick={handleZoomIn}
+            className="p-2 rounded-lg bg-white border border-gray-300 hover:bg-gray-50 hover:border-gray-400 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1"
+            aria-label="Zoom in"
+          >
+            <svg className="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+          </button>
+
+          <button
+            onClick={handleResetZoom}
+            className="px-3 py-1.5 rounded-lg bg-white border border-gray-300 hover:bg-gray-50 hover:border-gray-400 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 text-xs font-medium text-gray-700"
+            aria-label="Reset zoom"
+          >
+            Reset
+          </button>
+
+          <div className="ml-2 text-xs text-gray-500 italic">
+            {isDragging ? '🖐️ Dragging' : '🖱️ Scroll to zoom, drag to pan'}
           </div>
         </div>
 
@@ -386,14 +474,32 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick }: RoadmapPr
         </div>
       </div>
 
-      {/* Scrollable Canvas Area */}
-      <div ref={containerRef} className="relative flex-1 overflow-auto min-h-[800px]">
-        <canvas
-          ref={canvasRef}
-          className="absolute top-0 left-0 pointer-events-none z-[5]"
-        />
+      {/* Zoomable Canvas Area */}
+      <div
+        ref={containerRef}
+        className="relative flex-1 overflow-hidden cursor-grab active:cursor-grabbing"
+        style={{ minHeight: '800px' }}
+        onWheel={handleWheel}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+      >
+        <div
+          ref={contentRef}
+          className="relative w-full h-full"
+          style={{
+            transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+            transformOrigin: '0 0',
+            transition: isDragging ? 'none' : 'transform 0.1s ease-out',
+          }}
+        >
+          <canvas
+            ref={canvasRef}
+            className="absolute top-0 left-0 pointer-events-none z-[5]"
+          />
 
-        <div className="relative min-h-full">
+          <div className="relative min-h-full">
           {/* Course cards */}
           {requiredCourses.map(course => {
             const pos = positions.get(course.id)
@@ -463,6 +569,7 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick }: RoadmapPr
               </Card>
             )
           })}
+          </div>
         </div>
       </div>
     </div>
