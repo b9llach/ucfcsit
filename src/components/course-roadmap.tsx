@@ -670,7 +670,7 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick, focusedCour
                   </p>
 
                   <div className="flex items-center justify-between pt-2 border-t border-gray-300">
-                    <Badge variant="secondary" className="text-xs bg-white/80 border border-gray-300 px-2 py-0.5 font-semibold">
+                    <Badge variant="secondary" className="text-xs bg-white/80 border border-gray-300 px-2 py-0.5 font-semibold text-gray-900">
                       {course.credits} credits
                     </Badge>
                     {completed && (
