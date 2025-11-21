@@ -143,6 +143,9 @@ export default function ProgressPage() {
                 <Link href="/schedule" className="text-black/70 hover:text-black transition-all-smooth">
                   Schedule
                 </Link>
+                <Link href="/feedback" className="text-black/70 hover:text-black transition-all-smooth">
+                  Feedback
+                </Link>
               </div>
 
               <DropdownMenu>

@@ -30,7 +30,7 @@ export function FeedbackButton() {
       {/* Floating Feedback Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 z-50 bg-primary hover:bg-primary/90 text-white rounded-full p-4 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-4 focus:ring-primary/30"
+        className="fixed bottom-6 right-6 z-50 bg-[#0071e3] hover:bg-[#0071e3]/90 text-white rounded-full p-4 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-4 focus:ring-[#0071e3]/30"
         aria-label="Send feedback"
       >
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -117,7 +117,7 @@ export function FeedbackButton() {
                         rows={4}
                         required
                         placeholder="Tell us what you think..."
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none text-sm"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent resize-none text-sm"
                       />
                     </div>
 
@@ -133,7 +133,7 @@ export function FeedbackButton() {
                       <button
                         type="submit"
                         disabled={!feedback.trim()}
-                        className="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                        className="flex-1 px-4 py-2 bg-[#0071e3] text-white rounded-lg hover:bg-[#0071e3]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
                       >
                         Send Feedback
                       </button>

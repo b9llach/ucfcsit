@@ -54,13 +54,10 @@ export async function POST(request: NextRequest) {
     console.log("Completed courses count:", completedCourses.length)
     console.log("Total courses available:", allCourses.length)
 
-    // Separate required and elective courses
+    // Separate required and elective courses (4000 level and below only)
     const allRequiredCourses = allCourses.filter((course: Course) => !course.isElective)
     const fourThousandLevelElectives = allCourses.filter((course: Course) =>
       course.isElective && course.electiveLevel === '4000_level'
-    )
-    const fiveThousandLevelElectives = allCourses.filter((course: Course) =>
-      course.isElective && course.electiveLevel === '5000_level'
     )
 
     // Generate 3 different schedule variations with different elective combinations
@@ -70,12 +67,9 @@ export async function POST(request: NextRequest) {
       electiveIds: string[]
     }> = []
 
-    // Variation 1: First 2 4000-level, first 1 5000-level
-    if (fourThousandLevelElectives.length >= 2 && fiveThousandLevelElectives.length >= 1) {
-      const electives = [
-        ...fourThousandLevelElectives.slice(0, 2),
-        ...fiveThousandLevelElectives.slice(0, 1)
-      ]
+    // Variation 1: First 3 4000-level electives
+    if (fourThousandLevelElectives.length >= 3) {
+      const electives = fourThousandLevelElectives.slice(0, 3)
       const scheduled = generatePrerequisiteAwareSchedule(allCourses, completedCourses, electives)
       scheduleVariations.push({
         name: "Recommended Path",
@@ -84,12 +78,9 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Variation 2: Different 4000-level electives (2nd and 3rd options)
-    if (fourThousandLevelElectives.length >= 4 && fiveThousandLevelElectives.length >= 2) {
-      const electives = [
-        ...fourThousandLevelElectives.slice(2, 4),
-        ...fiveThousandLevelElectives.slice(1, 2)
-      ]
+    // Variation 2: Different 4000-level electives (options 4-6)
+    if (fourThousandLevelElectives.length >= 6) {
+      const electives = fourThousandLevelElectives.slice(3, 6)
       const scheduled = generatePrerequisiteAwareSchedule(allCourses, completedCourses, electives)
       scheduleVariations.push({
         name: "Alternative Path 1",
@@ -98,12 +89,12 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Variation 3: Mix of different electives
-    if (fourThousandLevelElectives.length >= 5 && fiveThousandLevelElectives.length >= 2) {
+    // Variation 3: Mix of different 4000-level electives
+    if (fourThousandLevelElectives.length >= 9) {
       const electives = [
         fourThousandLevelElectives[0],
-        fourThousandLevelElectives[4],
-        fiveThousandLevelElectives[1]
+        fourThousandLevelElectives[6],
+        fourThousandLevelElectives[8]
       ]
       const scheduled = generatePrerequisiteAwareSchedule(allCourses, completedCourses, electives)
       scheduleVariations.push({
@@ -115,10 +106,7 @@ export async function POST(request: NextRequest) {
 
     // If no variations were generated (not enough electives), generate a default schedule
     if (scheduleVariations.length === 0) {
-      const electives = [
-        ...fourThousandLevelElectives.slice(0, Math.min(2, fourThousandLevelElectives.length)),
-        ...fiveThousandLevelElectives.slice(0, Math.min(1, fiveThousandLevelElectives.length))
-      ]
+      const electives = fourThousandLevelElectives.slice(0, Math.min(3, fourThousandLevelElectives.length))
       const scheduled = generatePrerequisiteAwareSchedule(allCourses, completedCourses, electives)
       scheduleVariations.push({
         name: "My Schedule",
@@ -315,7 +303,8 @@ function generatePrerequisiteAwareSchedule(
   const scheduledCourses: Array<{courseId: string, semester: string, year: number}> = []
   const scheduledCourseIds = new Set<string>([...completedCourseIds])
 
-  for (const semesterInfo of semesterPlan) {
+  for (let i = 0; i < semesterPlan.length; i++) {
+    const semesterInfo = semesterPlan[i]
     const { semester, year } = semesterInfo
     console.log(`\n=== Planning ${semester} ${year} ===`)
 
@@ -336,11 +325,23 @@ function generatePrerequisiteAwareSchedule(
 
     console.log(`Available: ${availableCourses.map(c => c.code).join(', ')}`)
 
+    // Calculate remaining courses and semesters for better balancing
+    const remainingCourses = allCoursesToSchedule.length - (scheduledCourseIds.size - completedCourseIds.size)
+    const remainingSemesters = semesterPlan.length - i
+    const avgCoursesPerSemester = remainingCourses / remainingSemesters
+
     // Group courses by corequisites
     const coursesToSchedule: Course[] = []
     const processedCoreqs = new Set<string>()
     let currentCredits = 0
-    const targetCredits = 15 // Target 15 credits per semester (typical full-time)
+
+    // Adjust target based on remaining courses - aim for more balanced distribution
+    let targetCredits = 15 // Default target
+    if (remainingSemesters <= 3 && remainingCourses <= 8) {
+      // For final few semesters with few courses, aim for even distribution
+      targetCredits = Math.ceil(avgCoursesPerSemester) * 3.5 // Estimate ~3.5 credits per course
+    }
+
     const minCredits = 12    // Minimum 12 credits for full-time
     const maxCredits = 18    // Maximum 18 credits per semester
 
@@ -374,8 +375,16 @@ function generatePrerequisiteAwareSchedule(
         }
       }
 
-      // Stop if we've reached a good credit load
-      if (currentCredits >= targetCredits) break
+      // Stop if we've reached target credits, unless we're in final semesters with few courses
+      const shouldStopFilling = currentCredits >= targetCredits
+      const isBalancingPhase = remainingSemesters <= 3 && remainingCourses <= 8
+
+      if (shouldStopFilling && !isBalancingPhase) {
+        break
+      } else if (isBalancingPhase && coursesToSchedule.length >= Math.ceil(avgCoursesPerSemester)) {
+        // In balancing phase, stop when we've hit the average number of courses
+        break
+      }
     }
 
     // Schedule the selected courses
