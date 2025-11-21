@@ -220,8 +220,8 @@ function RoadmapContent() {
 
           <div className="flex gap-6">
             {/* Roadmap */}
-            <div className="flex-shrink-0 flex-grow">
-              <Card className="border-black/10 bg-white">
+            <div className="flex-1 min-w-0" style={{ width: selectedCourse ? 'calc(100% - 424px)' : '100%' }}>
+              <Card className="border-black/10 bg-white" style={{ width: '100%' }}>
                 <CardHeader>
                   <CardTitle className="text-xl text-black">Interactive Roadmap</CardTitle>
                   <CardDescription className="text-muted-foreground">
