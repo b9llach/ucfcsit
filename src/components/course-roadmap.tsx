@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState, useCallback } from "react"
+import { useEffect, useRef, useState, useCallback, useMemo } from "react"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 
@@ -112,8 +112,14 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick, focusedCour
   }, [focusedCourseCode, courses, selectedElectives])
 
   // Separate electives from required courses
-  const electiveCourses = courses.filter(c => c.isElective || c.category?.toLowerCase().includes('elective'))
-  const requiredCourses = courses.filter(c => !c.isElective && (!c.category || !c.category.toLowerCase().includes('elective')))
+  const electiveCourses = useMemo(() =>
+    courses.filter(c => c.isElective || c.category?.toLowerCase().includes('elective')),
+    [courses]
+  )
+  const requiredCourses = useMemo(() =>
+    courses.filter(c => !c.isElective && (!c.category || !c.category.toLowerCase().includes('elective'))),
+    [courses]
+  )
 
   // Get the ghost course object if ghostCourseId is set
   const ghostCourse = ghostCourseId ? courses.find(c => c.id === ghostCourseId) : null
