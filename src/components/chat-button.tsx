@@ -15,7 +15,8 @@ const DEFAULT_MESSAGE: Message = {
 }
 
 export function ChatButton() {
-  const { data: session, status } = useSession()
+  const session = useSession()
+  const status = session?.status
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([DEFAULT_MESSAGE])
   const [input, setInput] = useState("")
@@ -109,7 +110,7 @@ export function ChatButton() {
   }
 
   // Only show chat for authenticated users
-  if (status === "loading" || status === "unauthenticated") {
+  if (!session || status === "loading" || status === "unauthenticated") {
     return null
   }
 
