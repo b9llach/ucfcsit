@@ -31,6 +31,13 @@ interface Position {
   level: number
 }
 
+interface GraphNode {
+  course: Course
+  level: number
+  dependents: string[] // Courses that require this as a prerequisite
+  prerequisites: string[]
+}
+
 export function CourseRoadmap({ courses, userCourses, onCourseClick }: RoadmapProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -59,114 +66,181 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick }: RoadmapPr
       !c.isElective && (!c.category || !c.category.toLowerCase().includes('elective'))
     )
 
-    // Build course map for lookups
-    const courseMap = new Map<string, Course>()
-    courses.forEach(c => courseMap.set(c.id, c))
+    if (requiredCourses.length === 0) return
 
-    // Calculate prerequisite depth for each course (tree level)
-    const courseDepth = new Map<string, number>()
-
-    const calculateDepth = (course: Course, visited = new Set<string>()): number => {
-      if (courseDepth.has(course.id)) return courseDepth.get(course.id)!
-      if (visited.has(course.id)) return 0
-
-      visited.add(course.id)
-
-      if (!course.prerequisites || course.prerequisites.length === 0) {
-        courseDepth.set(course.id, 0)
-        return 0
-      }
-
-      let maxDepth = 0
-      course.prerequisites.forEach(p => {
-        const prereq = courseMap.get(p.prerequisite.id)
-        if (prereq && prereq.id !== course.id) {
-          const depth = calculateDepth(prereq, new Set(visited))
-          maxDepth = Math.max(maxDepth, depth + 1)
-        }
-      })
-
-      courseDepth.set(course.id, maxDepth)
-      return maxDepth
-    }
-
-    // Calculate depths
-    console.log('=== CALCULATING DEPTHS ===')
+    console.log('=== BUILDING COURSE PREREQUISITE GRAPH ===')
     console.log('Total required courses:', requiredCourses.length)
-    console.log('Sample course with prereqs:', requiredCourses.find(c => c.prerequisites?.length > 0))
 
+    // Build course map and graph nodes
+    const courseMap = new Map<string, Course>()
+    const graphNodes = new Map<string, GraphNode>()
+
+    requiredCourses.forEach(c => {
+      courseMap.set(c.id, c)
+      graphNodes.set(c.id, {
+        course: c,
+        level: -1,
+        dependents: [],
+        prerequisites: c.prerequisites?.map(p => p.prerequisite.id) || []
+      })
+    })
+
+    // Build reverse dependencies (which courses depend on this course)
     requiredCourses.forEach(course => {
-      const depth = calculateDepth(course)
-      console.log(`${course.code}: depth ${depth}, prerequisites: ${course.prerequisites?.length || 0}`)
-      if (course.prerequisites?.length > 0) {
+      if (course.prerequisites) {
         course.prerequisites.forEach(p => {
-          console.log(`  - ${p.prerequisite.code} (id: ${p.prerequisite.id})`)
+          const prereqNode = graphNodes.get(p.prerequisite.id)
+          if (prereqNode && !prereqNode.dependents.includes(course.id)) {
+            prereqNode.dependents.push(course.id)
+          }
         })
       }
     })
 
-    // Group by depth level
-    const depthGroups = new Map<number, Course[]>()
-    requiredCourses.forEach(course => {
-      const depth = courseDepth.get(course.id) || 0
-      if (!depthGroups.has(depth)) depthGroups.set(depth, [])
-      depthGroups.get(depth)!.push(course)
+    // Log prerequisite relationships
+    console.log('\n=== PREREQUISITE RELATIONSHIPS ===')
+    graphNodes.forEach((node, id) => {
+      if (node.dependents.length > 0) {
+        console.log(`${node.course.code} is required by:`, node.dependents.map(depId => {
+          const depCourse = courseMap.get(depId)
+          return depCourse?.code || depId
+        }).join(', '))
+      }
     })
 
-    console.log('\n=== DEPTH GROUPS ===')
-    Array.from(depthGroups.entries()).sort((a, b) => a[0] - b[0]).forEach(([depth, courses]) => {
-      console.log(`Depth ${depth}: ${courses.length} courses - ${courses.map(c => c.code).join(', ')}`)
+    // Calculate levels using topological sort with level assignment
+    const calculateLevels = () => {
+      const visited = new Set<string>()
+      const inCalculation = new Set<string>()
+
+      const calcLevel = (courseId: string): number => {
+        const node = graphNodes.get(courseId)
+        if (!node) return 0
+
+        // Already calculated
+        if (node.level >= 0) return node.level
+
+        // Detect cycles
+        if (inCalculation.has(courseId)) {
+          console.warn(`Cycle detected at ${node.course.code}`)
+          return 0
+        }
+
+        // No prerequisites = level 0 (foundational courses)
+        if (node.prerequisites.length === 0) {
+          node.level = 0
+          return 0
+        }
+
+        inCalculation.add(courseId)
+
+        // Level = max(prerequisite levels) + 1
+        let maxPrereqLevel = -1
+        for (const prereqId of node.prerequisites) {
+          const prereqNode = graphNodes.get(prereqId)
+          if (prereqNode) {
+            const prereqLevel = calcLevel(prereqId)
+            maxPrereqLevel = Math.max(maxPrereqLevel, prereqLevel)
+          }
+        }
+
+        inCalculation.delete(courseId)
+        node.level = maxPrereqLevel + 1
+        visited.add(courseId)
+
+        return node.level
+      }
+
+      // Calculate all levels
+      graphNodes.forEach((node, id) => {
+        if (!visited.has(id)) {
+          calcLevel(id)
+        }
+      })
+    }
+
+    calculateLevels()
+
+    // Group courses by level
+    const levelGroups = new Map<number, GraphNode[]>()
+    graphNodes.forEach(node => {
+      const level = node.level
+      if (!levelGroups.has(level)) {
+        levelGroups.set(level, [])
+      }
+      levelGroups.get(level)!.push(node)
     })
 
-    // Compact tree layout
-    const CARD_WIDTH = 180
-    const CARD_HEIGHT = 90
-    const HORIZONTAL_GAP = 120
-    const VERTICAL_GAP = 20
-    const START_X = 60
-    const START_Y = 80
+    console.log('\n=== LEVEL ASSIGNMENTS ===')
+    const sortedLevels = Array.from(levelGroups.keys()).sort((a, b) => a - b)
+    sortedLevels.forEach(level => {
+      const nodes = levelGroups.get(level)!
+      console.log(`Level ${level}: ${nodes.map(n => n.course.code).join(', ')}`)
+    })
+
+    // Layout constants
+    const CARD_WIDTH = 200
+    const CARD_HEIGHT = 100
+    const HORIZONTAL_GAP = 150
+    const VERTICAL_GAP = 40
+    const START_X = 80
+    const START_Y = 60
 
     const posMap = new Map<string, Position>()
-    const sortedDepths = Array.from(depthGroups.keys()).sort((a, b) => a - b)
 
-    // Position courses in tree structure
-    sortedDepths.forEach((depth, depthIndex) => {
-      const coursesAtDepth = depthGroups.get(depth)!
-      const x = START_X + depthIndex * (CARD_WIDTH + HORIZONTAL_GAP)
+    // Position courses level by level
+    sortedLevels.forEach((level, levelIndex) => {
+      const nodesAtLevel = levelGroups.get(level)!
+      const x = START_X + levelIndex * (CARD_WIDTH + HORIZONTAL_GAP)
 
-      // Calculate target positions based on prerequisites
-      const courseTargets: Array<{ course: Course; targetY: number }> = []
-
-      coursesAtDepth.forEach(course => {
-        let targetY = START_Y
-        const prereqYs: number[] = []
-
-        if (course.prerequisites && course.prerequisites.length > 0) {
-          course.prerequisites.forEach(p => {
-            const prereqPos = posMap.get(p.prerequisite.id)
-            if (prereqPos) prereqYs.push(prereqPos.y)
-          })
+      // Sort nodes at this level by their dependencies to minimize crossing
+      // Nodes with similar prerequisites should be close together
+      const sortedNodes = [...nodesAtLevel].sort((a, b) => {
+        // Foundational courses (level 0) - sort alphabetically
+        if (level === 0) {
+          return a.course.code.localeCompare(b.course.code)
         }
 
-        if (prereqYs.length > 0) {
-          targetY = prereqYs.reduce((sum, y) => sum + y, 0) / prereqYs.length
-        } else {
-          // Root nodes - spread vertically
-          targetY = START_Y + coursesAtDepth.indexOf(course) * (CARD_HEIGHT + VERTICAL_GAP * 3)
+        // For higher levels, calculate average Y position of prerequisites
+        const getPrereqAvgY = (node: GraphNode): number => {
+          if (node.prerequisites.length === 0) return 0
+          const prereqYs = node.prerequisites
+            .map(pId => posMap.get(pId)?.y || 0)
+            .filter(y => y > 0)
+          if (prereqYs.length === 0) return 0
+          return prereqYs.reduce((sum, y) => sum + y, 0) / prereqYs.length
         }
 
-        courseTargets.push({ course, targetY })
+        const avgYA = getPrereqAvgY(a)
+        const avgYB = getPrereqAvgY(b)
+
+        return avgYA - avgYB
       })
 
-      // Sort by target position for natural flow
-      courseTargets.sort((a, b) => a.targetY - b.targetY)
-
-      // Position with overlap prevention
+      // Calculate vertical spacing to prevent overlap while maintaining flow
       let currentY = START_Y
-      courseTargets.forEach(({ course, targetY }) => {
-        const y = Math.max(currentY, targetY)
-        posMap.set(course.id, { x, y, level: depth })
-        currentY = y + CARD_HEIGHT + VERTICAL_GAP
+
+      sortedNodes.forEach((node, index) => {
+        // For courses with prerequisites, try to align with them
+        if (node.prerequisites.length > 0 && level > 0) {
+          const prereqYs = node.prerequisites
+            .map(pId => posMap.get(pId)?.y)
+            .filter((y): y is number => y !== undefined)
+
+          if (prereqYs.length > 0) {
+            const targetY = prereqYs.reduce((sum, y) => sum + y, 0) / prereqYs.length
+            // Use target Y but ensure no overlap
+            currentY = Math.max(currentY, targetY)
+          }
+        }
+
+        posMap.set(node.course.id, {
+          x,
+          y: currentY,
+          level
+        })
+
+        currentY += CARD_HEIGHT + VERTICAL_GAP
       })
     })
 
@@ -182,30 +256,37 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick }: RoadmapPr
     const container = containerRef.current
     if (!container) return
 
-    // Set canvas size
+    // Set canvas size to accommodate all courses
     let maxX = 0
     let maxY = 0
     posMap.forEach(pos => {
-      maxX = Math.max(maxX, pos.x + CARD_WIDTH + 100)
-      maxY = Math.max(maxY, pos.y + CARD_HEIGHT + 100)
+      maxX = Math.max(maxX, pos.x + CARD_WIDTH + 150)
+      maxY = Math.max(maxY, pos.y + CARD_HEIGHT + 150)
     })
 
-    canvas.width = Math.max(container.scrollWidth, maxX)
-    canvas.height = Math.max(container.scrollHeight, maxY)
+    canvas.width = Math.max(container.clientWidth, maxX)
+    canvas.height = Math.max(container.clientHeight, maxY)
     ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-    // Draw prerequisite arrows
-    requiredCourses.forEach(course => {
-      const coursePos = posMap.get(course.id)
-      if (!coursePos || !course.prerequisites) return
+    console.log('\n=== DRAWING CONNECTIONS ===')
+    let connectionCount = 0
 
-      course.prerequisites.forEach(prereq => {
-        if (prereq.prerequisite.id === course.id) return // Skip self-references
+    // Draw all prerequisite connections
+    graphNodes.forEach((node, courseId) => {
+      const coursePos = posMap.get(courseId)
+      if (!coursePos) return
 
-        const prereqPos = posMap.get(prereq.prerequisite.id)
-        if (!prereqPos) return
+      const status = getCourseStatus(node.course)
 
-        const status = getCourseStatus(course)
+      // Draw connections to all prerequisites
+      node.prerequisites.forEach(prereqId => {
+        const prereqPos = posMap.get(prereqId)
+        if (!prereqPos) {
+          console.warn(`Position not found for prerequisite ${prereqId}`)
+          return
+        }
+
+        connectionCount++
 
         // Calculate connection points
         const startX = prereqPos.x + CARD_WIDTH
@@ -213,31 +294,33 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick }: RoadmapPr
         const endX = coursePos.x
         const endY = coursePos.y + CARD_HEIGHT / 2
 
-        // Draw curved line for better aesthetics
+        // Draw smooth bezier curve
         ctx.beginPath()
         ctx.moveTo(startX, startY)
 
-        const controlX = startX + (endX - startX) / 2
-        ctx.bezierCurveTo(controlX, startY, controlX, endY, endX, endY)
+        // Control points for smooth curve
+        const controlX1 = startX + (endX - startX) * 0.4
+        const controlX2 = startX + (endX - startX) * 0.6
+        ctx.bezierCurveTo(controlX1, startY, controlX2, endY, endX, endY)
 
-        // Color based on status
+        // Color and style based on status
         if (status === 'completed') {
-          ctx.strokeStyle = '#10b981'
-          ctx.lineWidth = 2.5
+          ctx.strokeStyle = '#10b981' // Green
+          ctx.lineWidth = 3
         } else if (status === 'available') {
-          ctx.strokeStyle = '#3b82f6'
+          ctx.strokeStyle = '#3b82f6' // Blue
           ctx.lineWidth = 2.5
         } else {
-          ctx.strokeStyle = '#9ca3af'
+          ctx.strokeStyle = '#cbd5e1' // Gray
           ctx.lineWidth = 2
-          ctx.setLineDash([5, 5])
+          ctx.setLineDash([8, 4])
         }
 
         ctx.stroke()
         ctx.setLineDash([])
 
         // Draw arrowhead
-        const arrowSize = 8
+        const arrowSize = 10
         const angle = Math.atan2(endY - startY, endX - startX)
 
         ctx.beginPath()
@@ -253,8 +336,16 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick }: RoadmapPr
         ctx.closePath()
         ctx.fillStyle = ctx.strokeStyle
         ctx.fill()
+
+        // Log the connection
+        const prereqCourse = courseMap.get(prereqId)
+        if (prereqCourse) {
+          console.log(`${prereqCourse.code} → ${node.course.code}`)
+        }
       })
     })
+
+    console.log(`Total connections drawn: ${connectionCount}`)
   }, [courses, userCourses])
 
   const requiredCourses = courses.filter(c =>
@@ -262,8 +353,8 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick }: RoadmapPr
   )
 
   return (
-    <div className="relative w-full h-full bg-white rounded-2xl overflow-hidden border border-black/10">
-      <div ref={containerRef} className="relative w-full h-[800px] overflow-auto">
+    <div className="relative w-full h-full bg-gradient-to-br from-gray-50 to-white rounded-2xl overflow-hidden border border-gray-200 shadow-inner">
+      <div ref={containerRef} className="relative w-full h-[900px] overflow-auto">
         <canvas
           ref={canvasRef}
           className="absolute top-0 left-0 pointer-events-none z-[5]"
@@ -287,49 +378,52 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick }: RoadmapPr
                 onMouseEnter={() => setHoveredCourse(course.id)}
                 onMouseLeave={() => setHoveredCourse(null)}
                 className={`absolute cursor-pointer transition-all duration-200 ${
-                  hoveredCourse === course.id ? 'scale-105 shadow-2xl z-20' : 'shadow-md z-10'
+                  hoveredCourse === course.id ? 'scale-105 shadow-2xl z-20' : 'shadow-lg z-10'
                 } ${
                   completed
-                    ? 'bg-green-50 border-2 border-green-500'
+                    ? 'bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-500'
                     : available
-                    ? 'bg-blue-50 border-2 border-blue-500'
-                    : 'bg-gray-50 border-2 border-gray-300 opacity-70'
+                    ? 'bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-500'
+                    : 'bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-300 opacity-60'
                 }`}
                 style={{
                   left: `${pos.x}px`,
                   top: `${pos.y}px`,
-                  width: '180px',
-                  minHeight: '90px',
+                  width: '200px',
+                  minHeight: '100px',
                 }}
               >
-                <div className="p-3 h-full flex flex-col">
-                  <div className="flex items-start justify-between mb-1.5">
-                    <h4 className="font-bold text-[13px] text-black leading-tight">{course.code}</h4>
+                <div className="p-3.5 h-full flex flex-col">
+                  <div className="flex items-start justify-between mb-2">
+                    <h4 className="font-bold text-sm text-gray-900 leading-tight">{course.code}</h4>
                     {completed && (
-                      <svg className="w-4 h-4 text-green-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="w-5 h-5 text-green-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                    )}
+                    {locked && (
+                      <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
                       </svg>
                     )}
                   </div>
 
-                  <p className="text-[10px] text-gray-600 line-clamp-2 mb-2 flex-grow">
+                  <p className="text-xs text-gray-700 line-clamp-2 mb-2 flex-grow">
                     {course.name}
                   </p>
 
-                  <div className="flex items-center justify-between pt-1.5 border-t border-black/10">
-                    <Badge variant="secondary" className="text-[9px] bg-white border-black/20 px-1.5 py-0.5">
-                      {course.credits} cr
+                  <div className="flex items-center justify-between pt-2 border-t border-gray-300">
+                    <Badge variant="secondary" className="text-xs bg-white/80 border border-gray-300 px-2 py-0.5 font-semibold">
+                      {course.credits} credits
                     </Badge>
                     {completed && (
-                      <span className="text-[9px] font-bold text-green-700">✓</span>
+                      <span className="text-xs font-bold text-green-700">Completed</span>
                     )}
                     {available && !completed && (
-                      <span className="text-[9px] font-bold text-blue-700">Ready</span>
+                      <span className="text-xs font-bold text-blue-700">Available</span>
                     )}
                     {locked && (
-                      <svg className="w-3 h-3 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-                      </svg>
+                      <span className="text-xs font-medium text-gray-500">Locked</span>
                     )}
                   </div>
                 </div>
@@ -339,21 +433,29 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick }: RoadmapPr
         </div>
       </div>
 
+      {/* Level Labels */}
+      <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm rounded-lg p-3 shadow-lg border border-gray-200">
+        <div className="text-xs font-bold text-gray-900 mb-1.5">Course Progression</div>
+        <div className="text-xs text-gray-600">
+          Left to Right: Foundational → Advanced
+        </div>
+      </div>
+
       {/* Legend */}
-      <div className="absolute bottom-4 right-4 bg-white rounded-lg p-3 shadow-xl border border-black/10">
-        <div className="text-[10px] font-semibold text-black mb-2">Status</div>
-        <div className="flex flex-col space-y-1.5 text-[10px]">
+      <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg p-3.5 shadow-lg border border-gray-200">
+        <div className="text-xs font-bold text-gray-900 mb-2">Course Status</div>
+        <div className="flex flex-col space-y-2 text-xs">
           <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 rounded bg-green-50 border-2 border-green-500" />
-            <span className="text-black">Completed</span>
+            <div className="w-4 h-4 rounded bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-500" />
+            <span className="text-gray-700 font-medium">Completed</span>
           </div>
           <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 rounded bg-blue-50 border-2 border-blue-500" />
-            <span className="text-black">Available</span>
+            <div className="w-4 h-4 rounded bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-500" />
+            <span className="text-gray-700 font-medium">Available</span>
           </div>
           <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 rounded bg-gray-50 border-2 border-gray-300" />
-            <span className="text-black">Locked</span>
+            <div className="w-4 h-4 rounded bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-300" />
+            <span className="text-gray-700 font-medium">Locked</span>
           </div>
         </div>
       </div>
