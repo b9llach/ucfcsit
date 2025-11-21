@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
     })
 
     // Build context for AI
-    const context = `You are an academic advisor assistant for UCF CS/IT degree planning. You have access to the following information about the student:
+    const context = `You are an academic advisor assistant working for DegreeMe, a UCF CS/IT degree planning application. You have access to the following information about the student:
 
 COMPLETED COURSES (${completedCourses.length} courses):
 ${completedCourses.map(uc => `- ${uc.course.code}: ${uc.course.name} (${uc.course.credits} credits)`).join('\n')}
@@ -102,7 +102,7 @@ Be friendly, concise, and helpful. If you don't know something specific about a 
         },
         {
           role: "model",
-          parts: [{ text: "I understand. I'm ready to help you with your UCF CS/IT degree planning. What would you like to know?" }]
+          parts: [{ text: "I understand. I'm your DegreeMe advisor and I'm ready to help you with your UCF CS/IT degree planning. What would you like to know?" }]
         },
         ...chatHistory.map((msg: { role: string; content: string }) => ({
           role: msg.role === "user" ? "user" : "model",
