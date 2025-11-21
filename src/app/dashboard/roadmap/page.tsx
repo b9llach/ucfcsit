@@ -1,7 +1,7 @@
 "use client"
 
 import { useSession, signOut } from "next-auth/react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -41,7 +41,7 @@ interface UserCourse {
   course: Course
 }
 
-export default function RoadmapPage() {
+function RoadmapContent() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -322,5 +322,17 @@ export default function RoadmapPage() {
         </div>
       </main>
     </div>
+  )
+}
+
+export default function RoadmapPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="w-16 h-16 border-4 border-gray-200 border-t-accent rounded-full animate-spin"></div>
+      </div>
+    }>
+      <RoadmapContent />
+    </Suspense>
   )
 }
