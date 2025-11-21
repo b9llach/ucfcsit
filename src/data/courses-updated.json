@@ -88,6 +88,13 @@
       "corequisites": [],
       "gep_requirement": false
     },
+    "COP3330": {
+      "name": "Obj. Oriented Programming",
+      "credits": 3,
+      "prerequisites": ["COP2500C"],
+      "corequisites": [],
+      "gep_requirement": false
+    },
     "CIS3990": {
       "name": "IT Advising I",
       "credits": 0,
@@ -105,7 +112,7 @@
     "CIS4004": {
       "name": "Web-based Information Technology",
       "credits": 3,
-      "prerequisites": ["CNT3004"],
+      "prerequisites": ["CNT3004", "COP3330"],
       "corequisites": [],
       "gep_requirement": false
     },
@@ -185,9 +192,9 @@
       "gep_requirement": false
     },
     "CNT4714": {
-      "name": "Enterprise Computing", 
+      "name": "Enterprise Computing",
       "credits": 3,
-      "prerequisites": ["MAD2104", "CGS3269"],
+      "prerequisites": ["MAD2104", "CGS3269", "COP3330", "COP3502C"],
       "corequisites": [],
       "gep_requirement": false
     },
