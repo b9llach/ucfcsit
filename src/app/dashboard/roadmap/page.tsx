@@ -126,6 +126,12 @@ function RoadmapContent() {
     return userCourses.some(uc => uc.courseId === courseId && uc.completed)
   }
 
+  const isLocked = (course: Course) => {
+    if (isCompleted(course.id)) return false
+    if (!course.prerequisites || course.prerequisites.length === 0) return false
+    return !course.prerequisites.every(p => isCompleted(p.prerequisite.id))
+  }
+
   if (status === "loading" || loading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
@@ -214,7 +220,7 @@ function RoadmapContent() {
 
           <div className="flex gap-6">
             {/* Roadmap */}
-            <div className={`transition-all duration-300 ${selectedCourse ? 'w-2/3' : 'w-full'}`}>
+            <div className="flex-shrink-0 flex-grow">
               <Card className="border-black/10 bg-white">
                 <CardHeader>
                   <CardTitle className="text-xl text-black">Interactive Roadmap</CardTitle>
@@ -235,8 +241,8 @@ function RoadmapContent() {
 
             {/* Course Details Sidebar */}
             {selectedCourse && (
-              <div className="w-1/3 animate-in slide-in-from-right duration-300">
-                <Card className="border-black/10 bg-white sticky top-24">
+              <div className="w-[400px] flex-shrink-0 animate-in slide-in-from-right duration-300">
+                <Card className="border-black/10 bg-white shadow-lg sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto">
                   <CardHeader className="pb-4">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
@@ -303,16 +309,30 @@ function RoadmapContent() {
                     )}
 
                     <div className="pt-4 border-t border-black/10">
-                      <Button
-                        onClick={() => handleCourseToggle(selectedCourse.id, !isCompleted(selectedCourse.id))}
-                        className={`w-full ${
-                          isCompleted(selectedCourse.id)
-                            ? "bg-gray-100 hover:bg-gray-200 text-gray-700"
-                            : "bg-black hover:bg-black/90 text-white"
-                        } transition-all-smooth`}
-                      >
-                        {isCompleted(selectedCourse.id) ? "Mark as Incomplete" : "Mark as Complete"}
-                      </Button>
+                      {isLocked(selectedCourse) ? (
+                        <div className="space-y-2">
+                          <Button
+                            disabled
+                            className="w-full bg-gray-100 text-gray-400 cursor-not-allowed"
+                          >
+                            Locked
+                          </Button>
+                          <p className="text-xs text-center text-muted-foreground">
+                            Complete prerequisites first
+                          </p>
+                        </div>
+                      ) : (
+                        <Button
+                          onClick={() => handleCourseToggle(selectedCourse.id, !isCompleted(selectedCourse.id))}
+                          className={`w-full ${
+                            isCompleted(selectedCourse.id)
+                              ? "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                              : "bg-black hover:bg-black/90 text-white"
+                          } transition-all-smooth`}
+                        >
+                          {isCompleted(selectedCourse.id) ? "Mark as Incomplete" : "Mark as Complete"}
+                        </Button>
+                      )}
                     </div>
                   </CardContent>
                 </Card>

@@ -618,13 +618,11 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick, focusedCour
             return (
               <Card
                 key={course.id}
-                onClick={() => !locked && onCourseClick?.(course)}
+                onClick={() => onCourseClick?.(course)}
                 onMouseEnter={() => setHoveredCourse(course.id)}
                 onMouseLeave={() => setHoveredCourse(null)}
-                className={`absolute transition-all duration-200 ${
-                  locked ? 'cursor-not-allowed' : 'cursor-pointer'
-                } ${
-                  hoveredCourse === course.id && !locked ? 'scale-105 shadow-2xl z-20' : 'shadow-lg z-10'
+                className={`absolute transition-all duration-200 cursor-pointer ${
+                  hoveredCourse === course.id ? 'scale-105 shadow-2xl z-20' : 'shadow-lg z-10'
                 } ${
                   focusedCourseCode === course.code ? 'ring-4 ring-yellow-400 ring-offset-2 scale-110 z-30' : ''
                 } ${
@@ -696,13 +694,11 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick, focusedCour
               return (
                 <Card
                   key={course!.id}
-                  onClick={() => !locked && onCourseClick?.(course!)}
+                  onClick={() => onCourseClick?.(course!)}
                   onMouseEnter={() => setHoveredCourse(course!.id)}
                   onMouseLeave={() => setHoveredCourse(null)}
-                  className={`absolute transition-all duration-200 ${
-                    locked ? 'cursor-not-allowed' : 'cursor-pointer'
-                  } ${
-                    hoveredCourse === course!.id && !locked ? 'scale-105 shadow-2xl z-20' : 'shadow-lg z-10'
+                  className={`absolute transition-all duration-200 cursor-pointer ${
+                    hoveredCourse === course!.id ? 'scale-105 shadow-2xl z-20' : 'shadow-lg z-10'
                   } ${
                     focusedCourseCode === course!.code ? 'ring-4 ring-yellow-400 ring-offset-2 scale-110 z-30' : ''
                   } ${
