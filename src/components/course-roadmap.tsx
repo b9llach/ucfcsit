@@ -179,31 +179,40 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick, focusedCour
 
     console.log('Selected electives:', selectedElectiveCourses.map(c => c.code).join(', '))
 
-    // Build course map and graph nodes (required courses + selected electives)
+    // Build course map and graph nodes (required courses + selected electives + all prerequisites)
     const courseMap = new Map<string, Course>()
     const graphNodes = new Map<string, GraphNode>()
 
-    // Add required courses
-    requiredCourses.forEach(c => {
-      courseMap.set(c.id, c)
-      graphNodes.set(c.id, {
-        course: c,
-        level: -1,
-        dependents: [],
-        prerequisites: c.prerequisites?.map(p => p.prerequisite.id) || []
-      })
-    })
+    // Helper function to add a course and its prerequisites recursively
+    const addCourseToGraph = (course: Course) => {
+      // Skip if already added
+      if (graphNodes.has(course.id)) return
 
-    // Add selected electives
-    selectedElectiveCourses.forEach(c => {
-      courseMap.set(c.id, c)
-      graphNodes.set(c.id, {
-        course: c,
+      // Add to maps
+      courseMap.set(course.id, course)
+      graphNodes.set(course.id, {
+        course: course,
         level: -1,
         dependents: [],
-        prerequisites: c.prerequisites?.map(p => p.prerequisite.id) || []
+        prerequisites: course.prerequisites?.map(p => p.prerequisite.id) || []
       })
-    })
+
+      // Recursively add prerequisites
+      if (course.prerequisites) {
+        course.prerequisites.forEach(p => {
+          const prereqCourse = courses.find(c => c.id === p.prerequisite.id)
+          if (prereqCourse) {
+            addCourseToGraph(prereqCourse)
+          }
+        })
+      }
+    }
+
+    // Add required courses and their prerequisites
+    requiredCourses.forEach(c => addCourseToGraph(c))
+
+    // Add selected electives and their prerequisites
+    selectedElectiveCourses.forEach(c => addCourseToGraph(c))
 
     // Build reverse dependencies (which courses depend on this course)
     const allCoursesToProcess = [...requiredCourses, ...selectedElectiveCourses]
