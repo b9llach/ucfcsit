@@ -296,9 +296,6 @@ export default function Home() {
               </Link>
             </div>
           </div>
-          <div className="mt-4 text-center text-[10px] text-muted-foreground">
-            <p>Copyright 2024 DegreeMe. All rights reserved.</p>
-          </div>
         </div>
       </footer>
     </div>

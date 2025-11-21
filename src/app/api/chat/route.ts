@@ -112,8 +112,8 @@ export async function POST(request: NextRequest) {
     const elective4000 = electiveCourses.filter(c => c.electiveLevel === '4000_level')
     const completed4000Electives = elective4000.filter(c => completedCourseIds.has(c.id))
 
-    // Calculate electives needed (UCF IT degree requires 6 electives per flowchart)
-    const electivesNeeded = 6
+    // Calculate electives needed (UCF IT degree requires 2 electives per flowchart)
+    const electivesNeeded = 2
     const electivesRemaining = Math.max(0, electivesNeeded - completedElectives.length)
 
     // Build context for AI
@@ -139,7 +139,7 @@ ${schedules.length > 0 ? schedules[0].items.map(item =>
 DEGREE REQUIREMENTS:
 - Total Credits Required: 120
 - Required Courses: ${requiredCourses.length} courses (core curriculum)
-- Electives Needed: Students need 6 electives total (mix of restricted CS/IT electives)
+- Electives Needed: Students need 2 electives total (CS/IT 3/4xxx Restricted Electives)
 - Minimum Grade: C (2.0) in all major courses
 
 COMPLETE COURSE CATALOG WITH PREREQUISITES AND DETAILS:

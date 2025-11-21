@@ -62,9 +62,9 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick, focusedCour
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
 
-  // Elective slots state (6 elective slots for CS/IT degree)
+  // Elective slots state (2 elective slots for CS/IT degree)
   const [selectedElectives, setSelectedElectives] = useState<(string | null)[]>([
-    null, null, null, null, null, null
+    null, null
   ])
 
   // Temporary ghost course for previewing electives not yet selected
@@ -76,7 +76,7 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick, focusedCour
     if (saved) {
       try {
         const parsed = JSON.parse(saved)
-        if (Array.isArray(parsed) && parsed.length === 6) {
+        if (Array.isArray(parsed) && parsed.length === 2) {
           setSelectedElectives(parsed)
         }
       } catch (e) {
@@ -550,12 +550,12 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick, focusedCour
       {/* Elective Selection Bar */}
       <div className="px-4 py-3 bg-gradient-to-r from-purple-50 to-purple-100 border-b-2 border-purple-300 flex-shrink-0">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-sm font-bold text-purple-900">Choose Your Electives (6 Required)</h3>
+          <h3 className="text-sm font-bold text-purple-900">Choose Your Electives (2 Required)</h3>
           <span className="text-xs text-purple-700">
-            {selectedElectives.filter(e => e !== null).length}/6 Selected
+            {selectedElectives.filter(e => e !== null).length}/2 Selected
           </span>
         </div>
-        <div className="grid grid-cols-6 gap-2">
+        <div className="grid grid-cols-2 gap-2">
           {selectedElectives.map((selected, index) => (
             <div key={index} className="flex flex-col">
               <label className="text-xs font-medium text-purple-800 mb-1">Elective {index + 1}</label>

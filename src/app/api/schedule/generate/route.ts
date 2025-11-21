@@ -70,8 +70,8 @@ export async function POST(request: NextRequest) {
     ).length
     console.log("Completed electives:", completedElectiveCount)
 
-    // Need 6 total electives, so we need to schedule (6 - completed)
-    const electivesNeeded = Math.max(0, 6 - completedElectiveCount)
+    // Need 2 total electives, so we need to schedule (2 - completed)
+    const electivesNeeded = Math.max(0, 2 - completedElectiveCount)
     console.log("Electives needed in schedule:", electivesNeeded)
 
     // If user has selected electives, use those. Otherwise, pick 4000-level electives
