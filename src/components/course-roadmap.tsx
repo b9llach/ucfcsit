@@ -532,7 +532,7 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick, focusedCour
   }, [courses, userCourses, selectedElectives, ghostCourse, getCourseStatus, requiredCourses])
 
   return (
-    <div className="relative w-full h-full flex flex-col bg-gradient-to-br from-gray-50 to-white rounded-2xl overflow-hidden border border-gray-200 shadow-inner">
+    <div className="relative w-full h-full flex flex-col bg-gradient-to-br from-gray-50 to-white rounded-2xl overflow-hidden border border-gray-200 shadow-inner isolate">
       {/* Elective Selection Bar */}
       <div className="px-4 py-3 bg-gradient-to-r from-purple-50 to-purple-100 border-b-2 border-purple-300 flex-shrink-0">
         <div className="flex items-center justify-between mb-2">
