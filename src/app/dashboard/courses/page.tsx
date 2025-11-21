@@ -276,8 +276,16 @@ export default function CoursesPage() {
             </div>
             {filteredRequired.length === 0 && (
               <Card className="border-black/10 bg-white">
-                <CardContent className="py-12 text-center">
-                  <p className="text-muted-foreground">No required courses found</p>
+                <CardContent className="py-16 text-center">
+                  <svg className="w-16 h-16 mx-auto text-black/20 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  <h3 className="text-lg font-semibold text-black mb-2">No courses found</h3>
+                  <p className="text-[14px] text-muted-foreground max-w-sm mx-auto">
+                    {searchQuery
+                      ? `No required courses match "${searchQuery}". Try adjusting your search.`
+                      : "No required courses available. Please check back later."}
+                  </p>
                 </CardContent>
               </Card>
             )}
@@ -324,8 +332,23 @@ export default function CoursesPage() {
             </div>
             {filteredElectives.length === 0 && (
               <Card className="border-black/10 bg-white">
-                <CardContent className="py-12 text-center">
-                  <p className="text-muted-foreground">No electives found</p>
+                <CardContent className="py-16 text-center">
+                  <svg className="w-16 h-16 mx-auto text-black/20 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  <h3 className="text-lg font-semibold text-black mb-2">No electives found</h3>
+                  <p className="text-[14px] text-muted-foreground max-w-sm mx-auto">
+                    {searchQuery
+                      ? `No elective courses match "${searchQuery}". Try a different search term.`
+                      : "Choose electives from the roadmap page to add them to your plan."}
+                  </p>
+                  {!searchQuery && (
+                    <Link href="/dashboard/roadmap" className="inline-block mt-4">
+                      <Button className="bg-accent hover:bg-accent/90 text-accent-foreground px-6 h-10 text-[13px] rounded-full transition-all-smooth">
+                        View Roadmap
+                      </Button>
+                    </Link>
+                  )}
                 </CardContent>
               </Card>
             )}

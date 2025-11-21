@@ -283,6 +283,7 @@ function SchedulePageContent() {
                   disabled={isSharing}
                   variant="outline"
                   className="bg-white text-black hover:bg-gray-50 border-black/20 px-6 h-10 text-[13px] rounded-full transition-all-smooth"
+                  title="Generate a shareable link to your schedule"
                 >
                   <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
@@ -299,20 +300,31 @@ function SchedulePageContent() {
           {Object.keys(groupedSchedule).length === 0 ? (
             <Card className="border-black/10 bg-white">
               <CardContent className="py-20 text-center">
-                <svg className="w-16 h-16 mx-auto text-black/20 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                <h3 className="text-xl font-semibold text-black mb-2">No Schedule Generated</h3>
-                <p className="text-[15px] text-muted-foreground mb-6">
-                  {!isSharedView ? "Complete courses in your dashboard to generate a personalized schedule" : "This schedule hasn't been generated yet"}
-                </p>
-                {!isSharedView && (
-                  <Link href="/dashboard/courses">
-                    <Button className="bg-accent hover:bg-accent/90 text-accent-foreground px-6 h-10 text-[13px] rounded-full transition-all-smooth">
-                      Go to Courses
-                    </Button>
-                  </Link>
-                )}
+                <div className="max-w-md mx-auto">
+                  <svg className="w-20 h-20 mx-auto text-black/20 mb-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <h3 className="text-2xl font-semibold text-black mb-3">No Schedule Yet</h3>
+                  <p className="text-[15px] text-muted-foreground mb-8 leading-relaxed">
+                    {!isSharedView
+                      ? "Start building your schedule by marking completed courses. We'll automatically generate a semester-by-semester plan that respects all prerequisites."
+                      : "This schedule hasn't been generated yet. The owner needs to mark completed courses to create their plan."}
+                  </p>
+                  {!isSharedView && (
+                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                      <Link href="/dashboard/courses">
+                        <Button className="bg-accent hover:bg-accent/90 text-accent-foreground px-6 h-11 text-[14px] rounded-full transition-all-smooth">
+                          Mark Completed Courses
+                        </Button>
+                      </Link>
+                      <Link href="/dashboard/roadmap">
+                        <Button variant="outline" className="bg-white text-black hover:bg-gray-50 border-black/20 px-6 h-11 text-[14px] rounded-full transition-all-smooth">
+                          View Roadmap
+                        </Button>
+                      </Link>
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
           ) : (
