@@ -50,34 +50,100 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // Fetch all available courses
+    // Fetch all available courses with full prerequisite and corequisite data
     const allCourses = await prisma.course.findMany({
       include: {
-        requiredBy: {
+        prerequisites: {
           include: {
-            prerequisite: true
+            prerequisite: {
+              include: {
+                alternatives: {
+                  include: {
+                    alternative: true
+                  }
+                }
+              }
+            }
+          }
+        },
+        corequisites: {
+          include: {
+            corequisite: true
           }
         }
       }
     })
 
+    // Build detailed course catalog for AI
+    const courseDetails = allCourses.map(course => {
+      const prereqs = course.prerequisites.map(p => {
+        if (p.prerequisite.alternatives && p.prerequisite.alternatives.length > 0) {
+          const alts = p.prerequisite.alternatives.map(a => a.alternative.code).join(' OR ')
+          return `${p.prerequisite.code} (alternatives: ${alts})`
+        }
+        return p.prerequisite.code
+      })
+
+      const coreqs = course.corequisites.map(c => c.corequisite.code)
+
+      let courseInfo = `${course.code}: ${course.name} (${course.credits} credits)`
+      if (prereqs.length > 0) courseInfo += ` | Prerequisites: ${prereqs.join(', ')}`
+      if (coreqs.length > 0) courseInfo += ` | Corequisites: ${coreqs.join(', ')}`
+      if (course.description) courseInfo += ` | ${course.description}`
+      if (course.note) courseInfo += ` | Note: ${course.note}`
+      if (course.isElective) courseInfo += ` | ELECTIVE`
+
+      return courseInfo
+    }).join('\n')
+
+    // Calculate degree progress
+    const completedCourseIds = new Set(completedCourses.map(uc => uc.courseId))
+    const requiredCourses = allCourses.filter(c => !c.isElective)
+    const electiveCourses = allCourses.filter(c => c.isElective)
+
+    const completedRequired = requiredCourses.filter(c => completedCourseIds.has(c.id))
+    const remainingRequired = requiredCourses.filter(c => !completedCourseIds.has(c.id))
+
+    const completedElectives = electiveCourses.filter(c => completedCourseIds.has(c.id))
+    const totalCreditsCompleted = completedCourses.reduce((sum, uc) => sum + uc.course.credits, 0)
+    const creditsRemaining = 120 - totalCreditsCompleted
+
+    // Categorize electives
+    const elective4000 = electiveCourses.filter(c => c.electiveLevel === '4000_level')
+    const completed4000Electives = elective4000.filter(c => completedCourseIds.has(c.id))
+
+    // Calculate electives needed (UCF IT degree requires 6 electives per flowchart)
+    const electivesNeeded = 6
+    const electivesRemaining = Math.max(0, electivesNeeded - completedElectives.length)
+
     // Build context for AI
     const context = `You are an academic advisor assistant working for DegreeMe, a UCF CS/IT degree planning application. You have access to the following information about the student:
 
-COMPLETED COURSES (${completedCourses.length} courses):
+DEGREE PROGRESS SUMMARY:
+- Total Credits: ${totalCreditsCompleted}/120 (${creditsRemaining} remaining)
+- Required Courses: ${completedRequired.length}/${requiredCourses.length} completed (${remainingRequired.length} remaining)
+- Electives: ${completedElectives.length}/${electivesNeeded} completed (${electivesRemaining} remaining)
+- 4000-level Electives Completed: ${completed4000Electives.length}
+
+COMPLETED COURSES (${completedCourses.length} total):
 ${completedCourses.map(uc => `- ${uc.course.code}: ${uc.course.name} (${uc.course.credits} credits)`).join('\n')}
+
+REMAINING REQUIRED COURSES (${remainingRequired.length} courses):
+${remainingRequired.map(c => `- ${c.code}: ${c.name} (${c.credits} credits)`).join('\n')}
 
 CURRENT SCHEDULE:
 ${schedules.length > 0 ? schedules[0].items.map(item =>
   `${item.semester} ${item.year}: ${item.course.code} - ${item.course.name} (${item.course.credits} credits)`
 ).join('\n') : 'No schedule generated yet'}
 
-TOTAL CREDITS COMPLETED: ${completedCourses.reduce((sum, uc) => sum + uc.course.credits, 0)}
-TOTAL CREDITS NEEDED: 120 (typical CS degree requirement)
+DEGREE REQUIREMENTS:
+- Total Credits Required: 120
+- Required Courses: ${requiredCourses.length} courses (core curriculum)
+- Electives Needed: Students need 6 electives total (mix of restricted CS/IT electives)
+- Minimum Grade: C (2.0) in all major courses
 
-AVAILABLE COURSES IN PROGRAM:
-${allCourses.slice(0, 20).map(c => `- ${c.code}: ${c.name} (${c.credits} credits)`).join('\n')}
-... and more
+COMPLETE COURSE CATALOG WITH PREREQUISITES AND DETAILS:
+${courseDetails}
 
 You should help the student with:
 - Understanding their progress toward degree completion
