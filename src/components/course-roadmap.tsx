@@ -57,6 +57,26 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick }: RoadmapPr
     null, null, null, null, null, null
   ])
 
+  // Load selected electives from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('selectedElectives')
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved)
+        if (Array.isArray(parsed) && parsed.length === 6) {
+          setSelectedElectives(parsed)
+        }
+      } catch (e) {
+        console.error('Failed to load selected electives:', e)
+      }
+    }
+  }, [])
+
+  // Save selected electives to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('selectedElectives', JSON.stringify(selectedElectives))
+  }, [selectedElectives])
+
   // Separate electives from required courses
   const electiveCourses = courses.filter(c => c.isElective || c.category?.toLowerCase().includes('elective'))
   const requiredCourses = courses.filter(c => !c.isElective && (!c.category || !c.category.toLowerCase().includes('elective')))
