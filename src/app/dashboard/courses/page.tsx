@@ -199,7 +199,7 @@ export default function CourseCatalog() {
           </div>
 
           {/* Search and Filter */}
-          <Card className="border-black/10 bg-white mb-8">
+          <Card className="border-black/10 bg-white mb-8 shadow-sm">
             <CardContent className="pt-6">
               <div className="flex flex-col md:flex-row gap-4">
                 <div className="flex-1">
@@ -208,35 +208,43 @@ export default function CourseCatalog() {
                     placeholder="Search courses by code, name, or description..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="h-12 text-[14px]"
+                    className="h-12 text-[14px] bg-white border-black/20 focus:border-black/30"
                   />
                 </div>
                 <div className="flex gap-2">
                   <Button
-                    variant={filterCategory === "all" ? "default" : "outline"}
+                    variant="outline"
                     onClick={() => setFilterCategory("all")}
-                    className="rounded-full text-[13px]"
+                    className={`rounded-full text-[13px] bg-white border-black/20 hover:bg-gray-50 text-black hover:text-black transition-all-smooth ${
+                      filterCategory === "all" ? "border-black/40 bg-gray-50" : ""
+                    }`}
                   >
                     All
                   </Button>
                   <Button
-                    variant={filterCategory === "required" ? "default" : "outline"}
+                    variant="outline"
                     onClick={() => setFilterCategory("required")}
-                    className="rounded-full text-[13px]"
+                    className={`rounded-full text-[13px] bg-white border-black/20 hover:bg-gray-50 text-black hover:text-black transition-all-smooth ${
+                      filterCategory === "required" ? "border-black/40 bg-gray-50" : ""
+                    }`}
                   >
                     Required
                   </Button>
                   <Button
-                    variant={filterCategory === "elective" ? "default" : "outline"}
+                    variant="outline"
                     onClick={() => setFilterCategory("elective")}
-                    className="rounded-full text-[13px]"
+                    className={`rounded-full text-[13px] bg-white border-black/20 hover:bg-gray-50 text-black hover:text-black transition-all-smooth ${
+                      filterCategory === "elective" ? "border-black/40 bg-gray-50" : ""
+                    }`}
                   >
                     Electives
                   </Button>
                   <Button
-                    variant={filterCategory === "gep" ? "default" : "outline"}
+                    variant="outline"
                     onClick={() => setFilterCategory("gep")}
-                    className="rounded-full text-[13px]"
+                    className={`rounded-full text-[13px] bg-white border-black/20 hover:bg-gray-50 text-black hover:text-black transition-all-smooth ${
+                      filterCategory === "gep" ? "border-black/40 bg-gray-50" : ""
+                    }`}
                   >
                     GEP
                   </Button>
@@ -248,13 +256,13 @@ export default function CourseCatalog() {
           {/* Course List */}
           <div className="space-y-4">
             {filteredCourses.map(course => (
-              <Card key={course.id} className="border-black/10 bg-white hover:shadow-md transition-shadow">
+              <Card key={course.id} className="border-black/10 bg-white hover:shadow-lg transition-all-smooth shadow-sm">
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
                         <CardTitle className="text-xl text-black">{course.code}</CardTitle>
-                        <Badge variant="secondary" className="text-xs font-semibold">
+                        <Badge variant="secondary" className="text-xs font-semibold bg-gray-100 text-gray-700 border-gray-200">
                           {course.credits} credits
                         </Badge>
                         {isCompleted(course.id) && (
@@ -263,7 +271,7 @@ export default function CourseCatalog() {
                           </Badge>
                         )}
                         {course.gepRequirement && (
-                          <Badge variant="outline" className="text-xs">GEP</Badge>
+                          <Badge variant="outline" className="text-xs border-black/20 text-black">GEP</Badge>
                         )}
                         {course.isElective && (
                           <Badge className="text-xs bg-purple-100 text-purple-700 border-purple-200">
@@ -276,7 +284,7 @@ export default function CourseCatalog() {
                       </CardDescription>
                     </div>
                     <Link href="/dashboard/roadmap">
-                      <Button variant="outline" size="sm" className="text-[12px]" title="View in roadmap">
+                      <Button variant="outline" size="sm" className="ml-4 rounded-full text-[12px] bg-white border-black/20 hover:bg-gray-50 text-black hover:text-black transition-all-smooth" title="View in roadmap">
                         View in Roadmap
                       </Button>
                     </Link>
@@ -294,7 +302,7 @@ export default function CourseCatalog() {
                       <span className="text-[13px] font-semibold text-black mr-2">Prerequisites:</span>
                       <div className="flex flex-wrap gap-2 mt-1">
                         {course.prerequisites.map((prereq, index) => (
-                          <Badge key={index} variant="outline" className="text-[12px]">
+                          <Badge key={index} variant="outline" className="text-[12px] border-black/20 text-black">
                             {prereq.prerequisite.code}
                           </Badge>
                         ))}
