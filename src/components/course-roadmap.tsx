@@ -39,13 +39,6 @@ interface GraphNode {
   prerequisites: string[]
 }
 
-interface ElectiveSlot {
-  id: string
-  slotNumber: number
-  selectedCourseId: string | null
-  level: number
-}
-
 export function CourseRoadmap({ courses, userCourses, onCourseClick }: RoadmapProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -60,13 +53,8 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick }: RoadmapPr
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
 
   // Elective slots state (6 elective slots for CS/IT degree)
-  const [electiveSlots, setElectiveSlots] = useState<ElectiveSlot[]>([
-    { id: 'elective-1', slotNumber: 1, selectedCourseId: null, level: 2 },
-    { id: 'elective-2', slotNumber: 2, selectedCourseId: null, level: 3 },
-    { id: 'elective-3', slotNumber: 3, selectedCourseId: null, level: 3 },
-    { id: 'elective-4', slotNumber: 4, selectedCourseId: null, level: 4 },
-    { id: 'elective-5', slotNumber: 5, selectedCourseId: null, level: 4 },
-    { id: 'elective-6', slotNumber: 6, selectedCourseId: null, level: 5 },
+  const [selectedElectives, setSelectedElectives] = useState<(string | null)[]>([
+    null, null, null, null, null, null
   ])
 
   // Separate electives from required courses
@@ -132,10 +120,12 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick }: RoadmapPr
   }
 
   // Handle elective selection
-  const handleElectiveSelect = (slotId: string, courseId: string) => {
-    setElectiveSlots(prev => prev.map(slot =>
-      slot.id === slotId ? { ...slot, selectedCourseId: courseId } : slot
-    ))
+  const handleElectiveSelect = (slotIndex: number, courseId: string) => {
+    setSelectedElectives(prev => {
+      const newElectives = [...prev]
+      newElectives[slotIndex] = courseId || null
+      return newElectives
+    })
   }
 
   useEffect(() => {
@@ -145,10 +135,19 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick }: RoadmapPr
     console.log('=== BUILDING COURSE PREREQUISITE GRAPH ===')
     console.log('Total required courses:', requiredCourses.length)
 
-    // Build course map and graph nodes
+    // Get selected elective courses
+    const selectedElectiveCourses = selectedElectives
+      .filter(id => id !== null)
+      .map(id => courses.find(c => c.id === id))
+      .filter(c => c !== undefined) as Course[]
+
+    console.log('Selected electives:', selectedElectiveCourses.map(c => c.code).join(', '))
+
+    // Build course map and graph nodes (required courses + selected electives)
     const courseMap = new Map<string, Course>()
     const graphNodes = new Map<string, GraphNode>()
 
+    // Add required courses
     requiredCourses.forEach(c => {
       courseMap.set(c.id, c)
       graphNodes.set(c.id, {
@@ -159,8 +158,20 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick }: RoadmapPr
       })
     })
 
+    // Add selected electives
+    selectedElectiveCourses.forEach(c => {
+      courseMap.set(c.id, c)
+      graphNodes.set(c.id, {
+        course: c,
+        level: -1,
+        dependents: [],
+        prerequisites: c.prerequisites?.map(p => p.prerequisite.id) || []
+      })
+    })
+
     // Build reverse dependencies (which courses depend on this course)
-    requiredCourses.forEach(course => {
+    const allCoursesToProcess = [...requiredCourses, ...selectedElectiveCourses]
+    allCoursesToProcess.forEach(course => {
       if (course.prerequisites) {
         course.prerequisites.forEach(p => {
           const prereqNode = graphNodes.get(p.prerequisite.id)
@@ -318,27 +329,6 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick }: RoadmapPr
       })
     })
 
-    // Add elective slot positions
-    electiveSlots.forEach((slot, index) => {
-      const level = slot.level
-      const x = START_X + level * (CARD_WIDTH + HORIZONTAL_GAP)
-
-      // Find the last Y position at this level
-      const nodesAtLevel = Array.from(posMap.values()).filter(pos => pos.level === level)
-      const lastY = nodesAtLevel.length > 0
-        ? Math.max(...nodesAtLevel.map(pos => pos.y))
-        : START_Y
-
-      // Position below the last course at this level
-      const y = lastY + (nodesAtLevel.length > 0 ? CARD_HEIGHT + VERTICAL_GAP : 0)
-
-      posMap.set(slot.id, {
-        x,
-        y,
-        level
-      })
-    })
-
     setPositions(posMap)
 
     // Draw connections
@@ -441,10 +431,55 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick }: RoadmapPr
     })
 
     console.log(`Total connections drawn: ${connectionCount}`)
-  }, [courses, userCourses, electiveSlots])
+  }, [courses, userCourses, selectedElectives])
 
   return (
     <div className="relative w-full h-full flex flex-col bg-gradient-to-br from-gray-50 to-white rounded-2xl overflow-hidden border border-gray-200 shadow-inner">
+      {/* Elective Selection Bar */}
+      <div className="px-4 py-3 bg-gradient-to-r from-purple-50 to-purple-100 border-b-2 border-purple-300 flex-shrink-0">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-sm font-bold text-purple-900">Choose Your Electives (6 Required)</h3>
+          <span className="text-xs text-purple-700">
+            {selectedElectives.filter(e => e !== null).length}/6 Selected
+          </span>
+        </div>
+        <div className="grid grid-cols-6 gap-2">
+          {selectedElectives.map((selected, index) => (
+            <div key={index} className="flex flex-col">
+              <label className="text-xs font-medium text-purple-800 mb-1">Elective {index + 1}</label>
+              <select
+                value={selected || ''}
+                onChange={(e) => handleElectiveSelect(index, e.target.value)}
+                className="w-full text-xs bg-white border-2 border-purple-300 rounded-lg px-2 py-1.5 text-purple-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 cursor-pointer"
+                title={`Choose elective ${index + 1}`}
+              >
+                <option value="">Select...</option>
+                <optgroup label="4000-Level">
+                  {electiveCourses
+                    .filter(c => c.electiveLevel === '4000_level')
+                    .filter(c => !selectedElectives.includes(c.id) || selected === c.id)
+                    .map(course => (
+                      <option key={course.id} value={course.id}>
+                        {course.code}
+                      </option>
+                    ))}
+                </optgroup>
+                <optgroup label="5000-Level">
+                  {electiveCourses
+                    .filter(c => c.electiveLevel === '5000_level')
+                    .filter(c => !selectedElectives.includes(c.id) || selected === c.id)
+                    .map(course => (
+                      <option key={course.id} value={course.id}>
+                        {course.code}
+                      </option>
+                    ))}
+                </optgroup>
+              </select>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Header - Info and Legend */}
       <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200 flex-shrink-0">
         {/* Course Progression Info */}
@@ -514,6 +549,10 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick }: RoadmapPr
             <div className="flex items-center space-x-1.5">
               <div className="w-4 h-4 rounded bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-300" />
               <span className="text-gray-700 font-medium">Locked</span>
+            </div>
+            <div className="flex items-center space-x-1.5">
+              <div className="w-4 h-4 rounded bg-gradient-to-br from-purple-100 to-purple-200 border-2 border-purple-600" />
+              <span className="text-gray-700 font-medium">Elective</span>
             </div>
           </div>
         </div>
@@ -615,87 +654,76 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick }: RoadmapPr
             )
           })}
 
-          {/* Elective Slot cards */}
-          {electiveSlots.map(slot => {
-            const pos = positions.get(slot.id)
-            if (!pos) return null
+          {/* Selected Elective cards - rendered dynamically based on prerequisites */}
+          {selectedElectives
+            .filter(id => id !== null)
+            .map(courseId => courses.find(c => c.id === courseId))
+            .filter(course => course !== undefined)
+            .map(course => {
+              const pos = positions.get(course!.id)
+              if (!pos) return null
 
-            const selectedCourse = slot.selectedCourseId
-              ? electiveCourses.find(c => c.id === slot.selectedCourseId)
-              : null
+              const status = getCourseStatus(course!)
+              const completed = status === 'completed'
+              const available = status === 'available'
+              const locked = status === 'locked'
 
-            return (
-              <Card
-                key={slot.id}
-                className="absolute shadow-lg z-10 bg-gradient-to-br from-purple-50 to-purple-100 border-2 border-purple-400 border-dashed"
-                style={{
-                  left: `${pos.x}px`,
-                  top: `${pos.y}px`,
-                  width: '200px',
-                  minHeight: '120px',
-                }}
-              >
-                <div className="p-3 h-full flex flex-col">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-bold text-xs text-purple-900">
-                      Elective #{slot.slotNumber}
-                    </h4>
-                    <svg className="w-4 h-4 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
-                    </svg>
-                  </div>
+              return (
+                <Card
+                  key={course!.id}
+                  onClick={() => onCourseClick?.(course!)}
+                  onMouseEnter={() => setHoveredCourse(course!.id)}
+                  onMouseLeave={() => setHoveredCourse(null)}
+                  className={`absolute cursor-pointer transition-all duration-200 ${
+                    hoveredCourse === course!.id ? 'scale-105 shadow-2xl z-20' : 'shadow-lg z-10'
+                  } ${
+                    completed
+                      ? 'bg-gradient-to-br from-purple-50 to-purple-100 border-2 border-purple-500'
+                      : available
+                      ? 'bg-gradient-to-br from-purple-100 to-purple-200 border-2 border-purple-600'
+                      : 'bg-gradient-to-br from-purple-50 to-purple-100 border-2 border-purple-300 opacity-60'
+                  }`}
+                  style={{
+                    left: `${pos.x}px`,
+                    top: `${pos.y}px`,
+                    width: '200px',
+                    minHeight: '100px',
+                  }}
+                >
+                  <div className="p-3.5 h-full flex flex-col">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center gap-1">
+                        <h4 className="font-bold text-sm text-purple-900 leading-tight">{course!.code}</h4>
+                        <svg className="w-3 h-3 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                        </svg>
+                      </div>
+                      {completed && (
+                        <svg className="w-5 h-5 text-purple-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                      {locked && (
+                        <svg className="w-4 h-4 text-purple-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </div>
 
-                  {selectedCourse ? (
-                    <>
-                      <p className="text-xs font-semibold text-purple-900 mb-1">
-                        {selectedCourse.code}
-                      </p>
-                      <p className="text-xs text-purple-700 line-clamp-2 mb-2 flex-grow">
-                        {selectedCourse.name}
-                      </p>
-                    </>
-                  ) : (
-                    <p className="text-xs text-purple-700 mb-2 flex-grow italic">
-                      Choose an elective course
+                    <p className="text-xs text-purple-800 line-clamp-2 mb-2 flex-grow">
+                      {course!.name}
                     </p>
-                  )}
 
-                  <div className="pt-2 border-t border-purple-300">
-                    <select
-                      value={slot.selectedCourseId || ''}
-                      onChange={(e) => {
-                        e.stopPropagation()
-                        handleElectiveSelect(slot.id, e.target.value)
-                      }}
-                      onClick={(e) => e.stopPropagation()}
-                      className="w-full text-xs bg-white border border-purple-300 rounded px-2 py-1.5 text-purple-900 focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer"
-                      title="Choose an elective course for this slot"
-                    >
-                      <option value="">Select Elective...</option>
-                      <optgroup label="4000-Level">
-                        {electiveCourses
-                          .filter(c => c.electiveLevel === '4000_level')
-                          .map(course => (
-                            <option key={course.id} value={course.id}>
-                              {course.code} - {course.name}
-                            </option>
-                          ))}
-                      </optgroup>
-                      <optgroup label="5000-Level">
-                        {electiveCourses
-                          .filter(c => c.electiveLevel === '5000_level')
-                          .map(course => (
-                            <option key={course.id} value={course.id}>
-                              {course.code} - {course.name}
-                            </option>
-                          ))}
-                      </optgroup>
-                    </select>
+                    <div className="flex items-center justify-between pt-2 border-t border-purple-300">
+                      <Badge variant="secondary" className="text-xs bg-white/80 border border-purple-300 px-2 py-0.5 font-semibold text-purple-900">
+                        {course!.credits} credits
+                      </Badge>
+                      <span className="text-xs font-bold text-purple-700">ELECTIVE</span>
+                    </div>
                   </div>
-                </div>
-              </Card>
-            )
-          })}
+                </Card>
+              )
+            })}
           </div>
         </div>
       </div>
