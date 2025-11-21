@@ -15,7 +15,8 @@ const DEFAULT_MESSAGE: Message = {
 }
 
 export function ChatButton() {
-  const { status } = useSession()
+  const sessionData = useSession()
+  const status = sessionData?.status || "loading"
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([DEFAULT_MESSAGE])
   const [input, setInput] = useState("")
