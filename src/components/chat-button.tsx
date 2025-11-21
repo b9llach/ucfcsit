@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
+import { useSession } from "next-auth/react"
 import { Card } from "@/components/ui/card"
 
 interface Message {
@@ -14,6 +15,7 @@ const DEFAULT_MESSAGE: Message = {
 }
 
 export function ChatButton() {
+  const { data: session, status } = useSession()
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([DEFAULT_MESSAGE])
   const [input, setInput] = useState("")
@@ -104,6 +106,11 @@ export function ChatButton() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  // Only show chat for authenticated users
+  if (status === "loading" || status === "unauthenticated") {
+    return null
   }
 
   return (
