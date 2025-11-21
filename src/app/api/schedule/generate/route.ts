@@ -318,6 +318,18 @@ function generatePrerequisiteAwareSchedule(
       return prereqsMet
     })
 
+    // Calculate if we should consolidate BEFORE checking available courses
+    const remainingCoursesCheck = allCoursesToSchedule.length - (scheduledCourseIds.size - completedCourseIds.size)
+    const remainingSemestersCheck = semesterPlan.length - i
+    const shouldConsolidateCheck = remainingCoursesCheck <= 8 && remainingCoursesCheck > 0
+    const actualSemestersNeededCheck = Math.ceil(remainingCoursesCheck / 3)
+
+    // Skip this semester if we're consolidating and don't need this many semesters
+    if (shouldConsolidateCheck && i > actualSemestersNeededCheck - 1) {
+      console.log(`Skipping ${semester} ${year} (consolidating ${remainingCoursesCheck} courses into ${actualSemestersNeededCheck} semesters)`)
+      continue
+    }
+
     if (availableCourses.length === 0) {
       console.log(`No courses available for ${semester} ${year}`)
       continue
@@ -332,9 +344,21 @@ function generatePrerequisiteAwareSchedule(
     // Calculate remaining courses and semesters for better balancing
     const remainingCourses = allCoursesToSchedule.length - (scheduledCourseIds.size - completedCourseIds.size)
     const remainingSemesters = semesterPlan.length - i
-    const avgCoursesPerSemester = Math.max(3, Math.ceil(remainingCourses / remainingSemesters))
 
-    console.log(`Remaining: ${remainingCourses} courses over ${remainingSemesters} semesters (avg: ${avgCoursesPerSemester} per semester)`)
+    // If we have few courses left, pack them into fewer semesters (3+ courses each)
+    const minCoursesPerSemester = 3
+    const actualSemestersNeeded = Math.ceil(remainingCourses / minCoursesPerSemester)
+    const shouldConsolidate = remainingCourses <= 8 && remainingCourses > 0
+
+    let avgCoursesPerSemester: number
+    if (shouldConsolidate) {
+      // Pack remaining courses into fewer semesters to avoid sparse scheduling
+      avgCoursesPerSemester = Math.ceil(remainingCourses / actualSemestersNeeded)
+    } else {
+      avgCoursesPerSemester = Math.max(4, Math.ceil(remainingCourses / remainingSemesters))
+    }
+
+    console.log(`Remaining: ${remainingCourses} courses over ${remainingSemesters} semesters (target: ${avgCoursesPerSemester} per semester, consolidate: ${shouldConsolidate})`)
 
     // Calculate how many electives and required courses we should aim for
     const totalElectivesRemaining = selectedElectives.filter(e => !scheduledCourseIds.has(e.id)).length
@@ -354,7 +378,7 @@ function generatePrerequisiteAwareSchedule(
 
     const minCredits = 9     // Minimum to stay enrolled
     const maxCredits = 18    // Maximum 18 credits per semester
-    const targetCourses = Math.min(avgCoursesPerSemester, 5) // Aim for 3-5 courses per semester
+    const targetCourses = Math.min(Math.max(avgCoursesPerSemester, 3), 6) // Aim for 3-6 courses per semester, minimum 3
 
     // Interleave required and elective courses for better distribution
     const interleavedCourses: Course[] = []
