@@ -6,12 +6,101 @@ import { GoogleGenerativeAI } from "@google/generative-ai"
 
 const prisma = new PrismaClient()
 
+// Cache for course catalog (refreshes every 5 minutes)
+let courseCatalogCache: {
+  data: string | null
+  timestamp: number
+} = {
+  data: null,
+  timestamp: 0
+}
+
+const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
+
+// Rate limiting: Track last request time per user
+const rateLimitMap = new Map<string, number>()
+const RATE_LIMIT_MS = 2000 // 2 seconds between requests
+
+// Helper function to get or build course catalog
+async function getCourseCatalog(): Promise<string> {
+  const now = Date.now()
+
+  // Return cached data if still valid
+  if (courseCatalogCache.data && now - courseCatalogCache.timestamp < CACHE_TTL) {
+    return courseCatalogCache.data
+  }
+
+  // Fetch and build course catalog
+  const allCourses = await prisma.course.findMany({
+    include: {
+      prerequisites: {
+        include: {
+          prerequisite: {
+            include: {
+              alternatives: {
+                include: {
+                  alternative: true
+                }
+              }
+            }
+          }
+        }
+      },
+      corequisites: {
+        include: {
+          corequisite: true
+        }
+      }
+    }
+  })
+
+  const courseDetails = allCourses.map(course => {
+    const prereqs = course.prerequisites.map(p => {
+      if (p.prerequisite.alternatives && p.prerequisite.alternatives.length > 0) {
+        const alts = p.prerequisite.alternatives.map(a => a.alternative.code).join(' OR ')
+        return `${p.prerequisite.code} (alternatives: ${alts})`
+      }
+      return p.prerequisite.code
+    })
+
+    const coreqs = course.corequisites.map(c => c.corequisite.code)
+
+    let courseInfo = `${course.code}: ${course.name} (${course.credits} credits)`
+    if (prereqs.length > 0) courseInfo += ` | Prerequisites: ${prereqs.join(', ')}`
+    if (coreqs.length > 0) courseInfo += ` | Corequisites: ${coreqs.join(', ')}`
+    if (course.isElective) courseInfo += ` | ELECTIVE`
+
+    return courseInfo
+  }).join('\n')
+
+  // Update cache
+  courseCatalogCache.data = courseDetails
+  courseCatalogCache.timestamp = now
+
+  return courseDetails
+}
+
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
+
+    // Rate limiting check
+    const userEmail = session.user.email
+    const now = Date.now()
+    const lastRequestTime = rateLimitMap.get(userEmail)
+
+    if (lastRequestTime && now - lastRequestTime < RATE_LIMIT_MS) {
+      const waitTime = Math.ceil((RATE_LIMIT_MS - (now - lastRequestTime)) / 1000)
+      return NextResponse.json(
+        { error: `Please wait ${waitTime} seconds before sending another message.` },
+        { status: 429 }
+      )
+    }
+
+    rateLimitMap.set(userEmail, now)
 
     const { message, conversationHistory } = await request.json()
 
@@ -38,63 +127,40 @@ export async function POST(request: NextRequest) {
 
     const completedCourses = userCourses.filter(uc => uc.completed)
 
-    // Fetch user's schedules
+    // Fetch user's schedules (limit to most recent one)
     const schedules = await prisma.schedule.findMany({
       where: { userId: user.id },
+      take: 1,
+      orderBy: { createdAt: 'desc' },
       include: {
         items: {
           include: {
-            course: true
-          }
-        }
-      }
-    })
-
-    // Fetch all available courses with full prerequisite and corequisite data
-    const allCourses = await prisma.course.findMany({
-      include: {
-        prerequisites: {
-          include: {
-            prerequisite: {
-              include: {
-                alternatives: {
-                  include: {
-                    alternative: true
-                  }
-                }
+            course: {
+              select: {
+                code: true,
+                name: true,
+                credits: true
               }
             }
           }
-        },
-        corequisites: {
-          include: {
-            corequisite: true
-          }
         }
       }
     })
 
-    // Build detailed course catalog for AI
-    const courseDetails = allCourses.map(course => {
-      const prereqs = course.prerequisites.map(p => {
-        if (p.prerequisite.alternatives && p.prerequisite.alternatives.length > 0) {
-          const alts = p.prerequisite.alternatives.map(a => a.alternative.code).join(' OR ')
-          return `${p.prerequisite.code} (alternatives: ${alts})`
-        }
-        return p.prerequisite.code
-      })
+    // Get course catalog from cache (this is the expensive query)
+    const courseDetails = await getCourseCatalog()
 
-      const coreqs = course.corequisites.map(c => c.corequisite.code)
-
-      let courseInfo = `${course.code}: ${course.name} (${course.credits} credits)`
-      if (prereqs.length > 0) courseInfo += ` | Prerequisites: ${prereqs.join(', ')}`
-      if (coreqs.length > 0) courseInfo += ` | Corequisites: ${coreqs.join(', ')}`
-      if (course.description) courseInfo += ` | ${course.description}`
-      if (course.note) courseInfo += ` | Note: ${course.note}`
-      if (course.isElective) courseInfo += ` | ELECTIVE`
-
-      return courseInfo
-    }).join('\n')
+    // Fetch basic course info for progress calculation (no deep includes)
+    const allCourses = await prisma.course.findMany({
+      select: {
+        id: true,
+        code: true,
+        name: true,
+        credits: true,
+        isElective: true,
+        electiveLevel: true
+      }
+    })
 
     // Calculate degree progress
     const completedCourseIds = new Set(completedCourses.map(uc => uc.courseId))
@@ -163,8 +229,10 @@ Keep your responses conversational and easy to read in plain text format.`
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" })
 
-    // Build conversation history for context
+    // Build conversation history for context (limit to last 10 messages to reduce context size)
     const chatHistory = conversationHistory || []
+    const recentHistory = chatHistory.slice(-10)
+
     const chat = model.startChat({
       history: [
         {
@@ -175,7 +243,7 @@ Keep your responses conversational and easy to read in plain text format.`
           role: "model",
           parts: [{ text: "I understand. I'm your DegreeMe advisor and I'm ready to help you with your UCF CS/IT degree planning. What would you like to know?" }]
         },
-        ...chatHistory.map((msg: { role: string; content: string }) => ({
+        ...recentHistory.map((msg: { role: string; content: string }) => ({
           role: msg.role === "user" ? "user" : "model",
           parts: [{ text: msg.content }]
         }))
@@ -187,10 +255,20 @@ Keep your responses conversational and easy to read in plain text format.`
     const response = result.response.text()
 
     return NextResponse.json({ response })
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error in chat API:", error)
+
+    // Handle Gemini API rate limiting
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    if (errorMessage.includes("429") || errorMessage.includes("Resource exhausted")) {
+      return NextResponse.json(
+        { error: "The AI service is currently experiencing high demand. Please try again in a moment." },
+        { status: 503 }
+      )
+    }
+
     return NextResponse.json(
-      { error: "Failed to get response from AI", details: error.message },
+      { error: "Failed to get response from AI. Please try again." },
       { status: 500 }
     )
   }

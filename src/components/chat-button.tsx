@@ -71,11 +71,17 @@ export function ChatButton() {
         }),
       })
 
-      if (!response.ok) {
-        throw new Error("Failed to get response")
-      }
-
       const data = await response.json()
+
+      if (!response.ok) {
+        // Show the error message from the API
+        setMessages(prev => [...prev, {
+          role: "assistant",
+          content: data.error || "Sorry, I encountered an error. Please try again."
+        }])
+        setIsLoading(false)
+        return
+      }
 
       // Add assistant message to chat
       setMessages(prev => [...prev, { role: "assistant", content: data.response }])
@@ -83,7 +89,7 @@ export function ChatButton() {
       console.error("Error sending message:", error)
       setMessages(prev => [...prev, {
         role: "assistant",
-        content: "Sorry, I encountered an error. Please try again."
+        content: "Sorry, I encountered an error. Please try again in a moment."
       }])
     } finally {
       setIsLoading(false)
