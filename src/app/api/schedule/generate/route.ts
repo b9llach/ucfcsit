@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { courses: allCourses, completedCourses } = await request.json()
+    const { courses: allCourses, completedCourses, selectedElectiveIds = [] } = await request.json()
 
     // Get user ID
     const user = await prisma.user.findUnique({
@@ -53,65 +53,74 @@ export async function POST(request: NextRequest) {
     console.log("Generating schedule for user:", user.id)
     console.log("Completed courses count:", completedCourses.length)
     console.log("Total courses available:", allCourses.length)
+    console.log("Selected elective IDs:", selectedElectiveIds)
 
-    // Separate required and elective courses (4000 level and below only)
-    const allRequiredCourses = allCourses.filter((course: Course) => !course.isElective)
-    const fourThousandLevelElectives = allCourses.filter((course: Course) =>
-      course.isElective && course.electiveLevel === '4000_level'
-    )
+    // Get the electives the user has selected from the roadmap
+    let selectedElectives: Course[] = []
+    if (selectedElectiveIds.length > 0) {
+      selectedElectives = allCourses.filter((course: Course) =>
+        selectedElectiveIds.includes(course.id)
+      )
+      console.log("Found selected electives:", selectedElectives.map(e => e.code).join(', '))
+    }
 
-    // Generate 3 different schedule variations with different elective combinations
+    // Check how many electives are already completed
+    const completedElectiveCount = completedCourses.filter(uc =>
+      uc.course.isElective && uc.completed
+    ).length
+    console.log("Completed electives:", completedElectiveCount)
+
+    // Need 6 total electives, so we need to schedule (6 - completed)
+    const electivesNeeded = Math.max(0, 6 - completedElectiveCount)
+    console.log("Electives needed in schedule:", electivesNeeded)
+
+    // If user has selected electives, use those. Otherwise, pick 4000-level electives
+    let electivesToSchedule: Course[] = []
+    if (selectedElectives.length > 0) {
+      // Use selected electives that aren't already completed
+      electivesToSchedule = selectedElectives.filter(elective =>
+        !completedCourses.some(uc => uc.courseId === elective.id && uc.completed)
+      ).slice(0, electivesNeeded)
+    }
+
+    // If we still need more electives, fill with 4000-level electives
+    if (electivesToSchedule.length < electivesNeeded) {
+      const fourThousandLevelElectives = allCourses.filter((course: Course) =>
+        course.isElective &&
+        course.electiveLevel === '4000_level' &&
+        !completedCourses.some(uc => uc.courseId === course.id && uc.completed) &&
+        !electivesToSchedule.some(e => e.id === course.id)
+      )
+      const additionalNeeded = electivesNeeded - electivesToSchedule.length
+      electivesToSchedule = [...electivesToSchedule, ...fourThousandLevelElectives.slice(0, additionalNeeded)]
+    }
+
+    console.log("Electives to schedule:", electivesToSchedule.map(e => e.code).join(', '))
+
+    // Generate single schedule with selected/recommended electives
     const scheduleVariations: Array<{
       name: string
       scheduledCourses: Array<{courseId: string, semester: string, year: number}>
       electiveIds: string[]
     }> = []
 
-    // Variation 1: First 3 4000-level electives
-    if (fourThousandLevelElectives.length >= 3) {
-      const electives = fourThousandLevelElectives.slice(0, 3)
-      const scheduled = generatePrerequisiteAwareSchedule(allCourses, completedCourses, electives)
+    if (electivesToSchedule.length > 0) {
+      const scheduled = generatePrerequisiteAwareSchedule(allCourses, completedCourses, electivesToSchedule)
       scheduleVariations.push({
-        name: "Recommended Path",
+        name: "Your Schedule",
         scheduledCourses: scheduled,
-        electiveIds: electives.map(e => e.id)
+        electiveIds: electivesToSchedule.map(e => e.id)
       })
     }
 
-    // Variation 2: Different 4000-level electives (options 4-6)
-    if (fourThousandLevelElectives.length >= 6) {
-      const electives = fourThousandLevelElectives.slice(3, 6)
-      const scheduled = generatePrerequisiteAwareSchedule(allCourses, completedCourses, electives)
-      scheduleVariations.push({
-        name: "Alternative Path 1",
-        scheduledCourses: scheduled,
-        electiveIds: electives.map(e => e.id)
-      })
-    }
-
-    // Variation 3: Mix of different 4000-level electives
-    if (fourThousandLevelElectives.length >= 9) {
-      const electives = [
-        fourThousandLevelElectives[0],
-        fourThousandLevelElectives[6],
-        fourThousandLevelElectives[8]
-      ]
-      const scheduled = generatePrerequisiteAwareSchedule(allCourses, completedCourses, electives)
-      scheduleVariations.push({
-        name: "Alternative Path 2",
-        scheduledCourses: scheduled,
-        electiveIds: electives.map(e => e.id)
-      })
-    }
-
-    // If no variations were generated (not enough electives), generate a default schedule
+    // If no variations were generated (not enough electives), generate a schedule without electives
     if (scheduleVariations.length === 0) {
-      const electives = fourThousandLevelElectives.slice(0, Math.min(3, fourThousandLevelElectives.length))
-      const scheduled = generatePrerequisiteAwareSchedule(allCourses, completedCourses, electives)
+      console.log("No electives available or selected, generating schedule with required courses only")
+      const scheduled = generatePrerequisiteAwareSchedule(allCourses, completedCourses, [])
       scheduleVariations.push({
-        name: "My Schedule",
+        name: "Your Schedule",
         scheduledCourses: scheduled,
-        electiveIds: electives.map(e => e.id)
+        electiveIds: []
       })
     }
 

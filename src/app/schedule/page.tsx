@@ -142,10 +142,29 @@ function SchedulePageContent() {
   const generateSchedule = async (allCourses: Course[], completedCourses: UserCourse[]) => {
     try {
       setIsGenerating(true)
+
+      // Get selected electives from localStorage (from roadmap)
+      const selectedElectivesStr = localStorage.getItem('selectedElectives')
+      let selectedElectiveIds: string[] = []
+      if (selectedElectivesStr) {
+        try {
+          const parsed = JSON.parse(selectedElectivesStr)
+          if (Array.isArray(parsed)) {
+            selectedElectiveIds = parsed.filter(id => id !== null)
+          }
+        } catch (e) {
+          console.error('Failed to parse selected electives:', e)
+        }
+      }
+
       const response = await fetch("/api/schedule/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ courses: allCourses, completedCourses })
+        body: JSON.stringify({
+          courses: allCourses,
+          completedCourses,
+          selectedElectiveIds
+        })
       })
 
       if (response.ok) {
