@@ -5,7 +5,6 @@ import { useState, useEffect, useMemo, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -64,11 +63,15 @@ function SchedulePageContent() {
 
   const [courses, setCourses] = useState<Course[]>([])
   const [userCourses, setUserCourses] = useState<UserCourse[]>([])
-  const [schedule, setSchedule] = useState<Schedule | null>(null)
+  const [schedules, setSchedules] = useState<Schedule[]>([])
+  const [selectedScheduleIndex, setSelectedScheduleIndex] = useState(0)
   const [loading, setLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState("")
   const [isSharedView, setIsSharedView] = useState(false)
   const [isSharing, setIsSharing] = useState(false)
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [ownerName, setOwnerName] = useState<string | null>(null)
+
+  const schedule = schedules[selectedScheduleIndex] || null
 
   useEffect(() => {
     if (shareToken) {
@@ -83,9 +86,10 @@ function SchedulePageContent() {
       const response = await fetch(`/api/schedule/shared/${shareToken}`)
       if (response.ok) {
         const data = await response.json()
-        setSchedule(data.schedule)
+        setSchedules([data.schedule])
         setCourses(data.allCourses)
         setUserCourses(data.completedCourses)
+        setOwnerName(data.ownerName || "Someone")
         setIsSharedView(true)
       } else {
         router.push('/404')
@@ -100,9 +104,10 @@ function SchedulePageContent() {
 
   const fetchData = async () => {
     try {
-      const [coursesRes, userCoursesRes] = await Promise.all([
+      const [coursesRes, userCoursesRes, schedulesRes] = await Promise.all([
         fetch("/api/courses/with-prerequisites"),
-        fetch("/api/user/courses")
+        fetch("/api/user/courses"),
+        fetch("/api/schedule/all")
       ])
 
       if (coursesRes.ok && userCoursesRes.ok) {
@@ -112,7 +117,13 @@ function SchedulePageContent() {
         setCourses(Array.isArray(coursesData) ? coursesData : [])
         setUserCourses(Array.isArray(userCoursesData) ? userCoursesData : [])
 
-        generateSchedule(coursesData, userCoursesData)
+        if (schedulesRes.ok) {
+          const schedulesData = await schedulesRes.json()
+          setSchedules(Array.isArray(schedulesData.schedules) ? schedulesData.schedules : [])
+        } else {
+          // No schedules exist yet, generate them
+          await generateSchedule(coursesData, userCoursesData)
+        }
       }
     } catch (error) {
       console.error("Error fetching data:", error)
@@ -123,6 +134,7 @@ function SchedulePageContent() {
 
   const generateSchedule = async (allCourses: Course[], completedCourses: UserCourse[]) => {
     try {
+      setIsGenerating(true)
       const response = await fetch("/api/schedule/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -131,11 +143,21 @@ function SchedulePageContent() {
 
       if (response.ok) {
         const data = await response.json()
-        setSchedule(data.schedule)
+        setSchedules(data.schedules || [data.schedule])
+        setSelectedScheduleIndex(0)
+        toast.success(`Generated ${data.schedules?.length || 1} schedule${data.schedules?.length > 1 ? 's' : ''}`)
       }
     } catch (error) {
       console.error("Error generating schedule:", error)
+      toast.error("Failed to generate schedules")
+    } finally {
+      setIsGenerating(false)
     }
+  }
+
+  const regenerateSchedules = async () => {
+    if (courses.length === 0) return
+    await generateSchedule(courses, userCourses)
   }
 
   const shareSchedule = async () => {
@@ -160,14 +182,6 @@ function SchedulePageContent() {
       setIsSharing(false)
     }
   }
-
-  const filteredCourses = useMemo(() => {
-    if (!searchQuery) return courses
-    return courses.filter(course =>
-      course.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      course.name.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-  }, [courses, searchQuery])
 
   const getCompletedCourseIds = () => {
     return userCourses.filter(uc => uc.completed).map(uc => uc.courseId)
@@ -274,27 +288,82 @@ function SchedulePageContent() {
           {/* Header */}
           <div className="mb-8">
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-3">
-              <h1 className="text-5xl font-semibold text-black tracking-tight">
-                {isSharedView ? "Shared Schedule" : "Schedule"}
-              </h1>
-              {!isSharedView && schedule && (
-                <Button
-                  onClick={shareSchedule}
-                  disabled={isSharing}
-                  variant="outline"
-                  className="bg-white text-black hover:bg-gray-50 border-black/20 px-6 h-10 text-[13px] rounded-full transition-all-smooth"
-                  title="Generate a shareable link to your schedule"
-                >
-                  <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
-                  </svg>
-                  {isSharing ? "Sharing..." : "Share"}
-                </Button>
-              )}
+              <div>
+                <h1 className="text-5xl font-semibold text-black tracking-tight mb-2">
+                  {isSharedView ? `${ownerName}'s Schedule` : "Schedule"}
+                </h1>
+                <p className="text-[19px] text-muted-foreground">
+                  {isSharedView ? "Viewing a shared semester-by-semester plan" : "Your semester-by-semester degree plan"}
+                </p>
+              </div>
+              <div className="flex gap-3">
+                {!isSharedView && schedules.length > 0 && (
+                  <Button
+                    onClick={regenerateSchedules}
+                    disabled={isGenerating}
+                    variant="outline"
+                    className="bg-white text-black hover:bg-gray-50 border-black/20 px-6 h-10 text-[13px] rounded-full transition-all-smooth"
+                    title="Generate new schedule variations"
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    {isGenerating ? "Generating..." : "Regenerate"}
+                  </Button>
+                )}
+                {!isSharedView && schedule && (
+                  <Button
+                    onClick={shareSchedule}
+                    disabled={isSharing}
+                    variant="outline"
+                    className="bg-white text-black hover:bg-gray-50 border-black/20 px-6 h-10 text-[13px] rounded-full transition-all-smooth"
+                    title="Generate a shareable link to your schedule"
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
+                    </svg>
+                    {isSharing ? "Sharing..." : "Share"}
+                  </Button>
+                )}
+              </div>
             </div>
-            <p className="text-[19px] text-muted-foreground">
-              {isSharedView ? "Viewing a shared semester-by-semester plan" : "Your semester-by-semester degree plan"}
-            </p>
+
+            {/* Schedule Selector Tabs */}
+            {!isSharedView && schedules.length > 1 && (
+              <div className="flex gap-2 overflow-x-auto pb-2">
+                {schedules.map((sched, index) => {
+                  const totalCourses = sched.items.length
+                  const totalCredits = sched.items.reduce((sum, item) => sum + item.course.credits, 0)
+                  const electives = sched.items.filter(item => item.course.isElective)
+
+                  return (
+                    <button
+                      key={sched.id}
+                      onClick={() => setSelectedScheduleIndex(index)}
+                      className={`flex-shrink-0 px-6 py-4 rounded-xl border-2 transition-all-smooth text-left ${
+                        selectedScheduleIndex === index
+                          ? "bg-black text-white border-black"
+                          : "bg-white text-black border-black/20 hover:border-black/40"
+                      }`}
+                    >
+                      <div className="font-semibold text-[15px] mb-1">{sched.name}</div>
+                      <div className={`text-[12px] ${
+                        selectedScheduleIndex === index ? "text-white/70" : "text-muted-foreground"
+                      }`}>
+                        {totalCourses} courses • {totalCredits} credits
+                      </div>
+                      {electives.length > 0 && (
+                        <div className={`text-[11px] mt-2 ${
+                          selectedScheduleIndex === index ? "text-white/60" : "text-muted-foreground"
+                        }`}>
+                          Electives: {electives.map(e => e.course.code).join(', ')}
+                        </div>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
           </div>
 
           {Object.keys(groupedSchedule).length === 0 ? (
