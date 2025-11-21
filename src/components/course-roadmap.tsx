@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, useCallback } from "react"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 
@@ -113,12 +113,23 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick, focusedCour
   }
 
   // Mouse wheel zoom
-  const handleWheel = (e: React.WheelEvent) => {
+  const handleWheel = useCallback((e: WheelEvent) => {
     e.preventDefault()
     e.stopPropagation()
     const delta = e.deltaY > 0 ? -0.1 : 0.1
     setZoom(prev => Math.max(0.3, Math.min(3, prev + delta)))
-  }
+  }, [])
+
+  // Add non-passive wheel event listener to prevent page scroll
+  useEffect(() => {
+    const container = containerRef.current
+    if (container) {
+      container.addEventListener('wheel', handleWheel, { passive: false })
+      return () => {
+        container.removeEventListener('wheel', handleWheel)
+      }
+    }
+  }, [handleWheel])
 
   // Pan controls
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -585,7 +596,6 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick, focusedCour
         ref={containerRef}
         className="relative flex-1 overflow-hidden cursor-grab active:cursor-grabbing"
         style={{ minHeight: '800px' }}
-        onWheel={handleWheel}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
