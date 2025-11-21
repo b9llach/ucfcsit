@@ -353,8 +353,41 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick }: RoadmapPr
   )
 
   return (
-    <div className="relative w-full h-full bg-gradient-to-br from-gray-50 to-white rounded-2xl overflow-hidden border border-gray-200 shadow-inner">
-      <div ref={containerRef} className="relative w-full h-[900px] overflow-auto">
+    <div className="relative w-full h-full flex flex-col bg-gradient-to-br from-gray-50 to-white rounded-2xl overflow-hidden border border-gray-200 shadow-inner">
+      {/* Header - Info and Legend (above scrollable area) */}
+      <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200 flex-shrink-0">
+        {/* Course Progression Info */}
+        <div className="flex items-center space-x-3">
+          <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg px-3 py-2 border border-primary/20">
+            <div className="text-xs font-bold text-gray-900 mb-0.5">Course Progression</div>
+            <div className="text-xs text-gray-600">
+              Left to Right: Foundational → Advanced
+            </div>
+          </div>
+        </div>
+
+        {/* Legend */}
+        <div className="bg-white rounded-lg px-3 py-2 border border-gray-200">
+          <div className="text-xs font-bold text-gray-900 mb-2">Course Status</div>
+          <div className="flex items-center space-x-4 text-xs">
+            <div className="flex items-center space-x-1.5">
+              <div className="w-4 h-4 rounded bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-500" />
+              <span className="text-gray-700 font-medium">Completed</span>
+            </div>
+            <div className="flex items-center space-x-1.5">
+              <div className="w-4 h-4 rounded bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-500" />
+              <span className="text-gray-700 font-medium">Available</span>
+            </div>
+            <div className="flex items-center space-x-1.5">
+              <div className="w-4 h-4 rounded bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-300" />
+              <span className="text-gray-700 font-medium">Locked</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Scrollable Canvas Area */}
+      <div ref={containerRef} className="relative flex-1 overflow-auto min-h-[800px]">
         <canvas
           ref={canvasRef}
           className="absolute top-0 left-0 pointer-events-none z-[5]"
@@ -430,33 +463,6 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick }: RoadmapPr
               </Card>
             )
           })}
-        </div>
-      </div>
-
-      {/* Level Labels */}
-      <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm rounded-lg p-3 shadow-lg border border-gray-200">
-        <div className="text-xs font-bold text-gray-900 mb-1.5">Course Progression</div>
-        <div className="text-xs text-gray-600">
-          Left to Right: Foundational → Advanced
-        </div>
-      </div>
-
-      {/* Legend */}
-      <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg p-3.5 shadow-lg border border-gray-200">
-        <div className="text-xs font-bold text-gray-900 mb-2">Course Status</div>
-        <div className="flex flex-col space-y-2 text-xs">
-          <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 rounded bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-500" />
-            <span className="text-gray-700 font-medium">Completed</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 rounded bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-500" />
-            <span className="text-gray-700 font-medium">Available</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 rounded bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-300" />
-            <span className="text-gray-700 font-medium">Locked</span>
-          </div>
         </div>
       </div>
     </div>
