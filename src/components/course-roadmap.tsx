@@ -162,10 +162,12 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick, focusedCour
 
   // Mouse wheel zoom
   const handleWheel = useCallback((e: WheelEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    const delta = e.deltaY > 0 ? -0.1 : 0.1
-    setZoom(prev => Math.max(0.3, Math.min(3, prev + delta)))
+    // Only prevent default if we're actually over the roadmap container
+    if (e.target === containerRef.current || containerRef.current?.contains(e.target as Node)) {
+      e.preventDefault()
+      const delta = e.deltaY > 0 ? -0.1 : 0.1
+      setZoom(prev => Math.max(0.3, Math.min(3, prev + delta)))
+    }
   }, [])
 
   // Add non-passive wheel event listener to prevent page scroll
@@ -181,7 +183,9 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick, focusedCour
 
   // Pan controls
   const handleMouseDown = (e: React.MouseEvent) => {
+    // Only start dragging if clicking on the container or canvas (not on cards or other elements)
     if (e.target === containerRef.current || (e.target as HTMLElement).closest('canvas')) {
+      e.stopPropagation() // Prevent event from bubbling up
       setIsDragging(true)
       setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y })
     }
@@ -189,6 +193,7 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick, focusedCour
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (isDragging) {
+      e.stopPropagation() // Prevent event from bubbling up
       setPan({
         x: e.clientX - dragStart.x,
         y: e.clientY - dragStart.y
@@ -196,7 +201,10 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick, focusedCour
     }
   }
 
-  const handleMouseUp = () => {
+  const handleMouseUp = (e: React.MouseEvent) => {
+    if (isDragging) {
+      e.stopPropagation() // Prevent event from bubbling up
+    }
     setIsDragging(false)
   }
 
