@@ -95,11 +95,18 @@ export default function ProgressPage() {
     userCourses.some(uc => uc.courseId === c.id && uc.completed)
   ).length
 
-  const overallProgress = requiredCourses.length > 0
+  // Three different metrics:
+  // 1. Degree Completion - based on credit hours (actual graduation requirement)
+  const degreeProgress = Math.round((totalCredits / 120) * 100)
+
+  // 2. Core Requirements - required courses only
+  const coreProgress = requiredCourses.length > 0
     ? Math.round((completedRequired / requiredCourses.length) * 100)
     : 0
-  const creditProgress = Math.round((totalCredits / 120) * 100)
-  const requiredProgress = Math.round((completedRequired / requiredCourses.length) * 100)
+
+  // 3. Elective Progress - elective courses completed (need at least 6 for CS/IT)
+  const minElectives = 6
+  const electiveProgress = Math.min(Math.round((completedElectives / minElectives) * 100), 100)
 
   if (status === "loading" || loading) {
     return (
@@ -189,6 +196,7 @@ export default function ProgressPage() {
 
           {/* Circular Progress Indicators */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+            {/* 1. Degree Completion (Credit-based) */}
             <Card className="border-black/10 bg-white">
               <CardContent className="pt-8 pb-6">
                 <div className="flex flex-col items-center">
@@ -210,23 +218,24 @@ export default function ProgressPage() {
                         strokeWidth="10"
                         fill="none"
                         strokeDasharray={`${2 * Math.PI * 88}`}
-                        strokeDashoffset={`${2 * Math.PI * 88 * (1 - overallProgress / 100)}`}
+                        strokeDashoffset={`${2 * Math.PI * 88 * (1 - degreeProgress / 100)}`}
                         strokeLinecap="round"
                         className="transition-all-smooth"
                       />
                     </svg>
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-5xl font-semibold text-black">{overallProgress}%</span>
+                      <span className="text-5xl font-semibold text-black">{degreeProgress}%</span>
                     </div>
                   </div>
-                  <h3 className="text-xl font-semibold text-black mb-1">Overall Progress</h3>
+                  <h3 className="text-xl font-semibold text-black mb-1">Degree Completion</h3>
                   <p className="text-[13px] text-muted-foreground">
-                    {completedRequired} of {requiredCourses.length} required courses
+                    {totalCredits} of 120 credit hours
                   </p>
                 </div>
               </CardContent>
             </Card>
 
+            {/* 2. Core Requirements */}
             <Card className="border-black/10 bg-white">
               <CardContent className="pt-8 pb-6">
                 <div className="flex flex-col items-center">
@@ -248,23 +257,24 @@ export default function ProgressPage() {
                         strokeWidth="10"
                         fill="none"
                         strokeDasharray={`${2 * Math.PI * 88}`}
-                        strokeDashoffset={`${2 * Math.PI * 88 * (1 - creditProgress / 100)}`}
+                        strokeDashoffset={`${2 * Math.PI * 88 * (1 - coreProgress / 100)}`}
                         strokeLinecap="round"
                         className="transition-all-smooth"
                       />
                     </svg>
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-5xl font-semibold text-black">{creditProgress}%</span>
+                      <span className="text-5xl font-semibold text-black">{coreProgress}%</span>
                     </div>
                   </div>
-                  <h3 className="text-xl font-semibold text-black mb-1">Credit Hours</h3>
+                  <h3 className="text-xl font-semibold text-black mb-1">Core Requirements</h3>
                   <p className="text-[13px] text-muted-foreground">
-                    {totalCredits} of 120 credits
+                    {completedRequired} of {requiredCourses.length} required courses
                   </p>
                 </div>
               </CardContent>
             </Card>
 
+            {/* 3. Electives Progress */}
             <Card className="border-black/10 bg-white">
               <CardContent className="pt-8 pb-6">
                 <div className="flex flex-col items-center">
@@ -286,18 +296,18 @@ export default function ProgressPage() {
                         strokeWidth="10"
                         fill="none"
                         strokeDasharray={`${2 * Math.PI * 88}`}
-                        strokeDashoffset={`${2 * Math.PI * 88 * (1 - requiredProgress / 100)}`}
+                        strokeDashoffset={`${2 * Math.PI * 88 * (1 - electiveProgress / 100)}`}
                         strokeLinecap="round"
                         className="transition-all-smooth"
                       />
                     </svg>
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-5xl font-semibold text-black">{requiredProgress}%</span>
+                      <span className="text-5xl font-semibold text-black">{electiveProgress}%</span>
                     </div>
                   </div>
-                  <h3 className="text-xl font-semibold text-black mb-1">Required Courses</h3>
+                  <h3 className="text-xl font-semibold text-black mb-1">Electives</h3>
                   <p className="text-[13px] text-muted-foreground">
-                    {completedRequired} of {requiredCourses.length} courses
+                    {completedElectives} of {minElectives} elective courses
                   </p>
                 </div>
               </CardContent>
