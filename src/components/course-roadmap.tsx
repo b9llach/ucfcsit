@@ -115,6 +115,7 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick, focusedCour
   // Mouse wheel zoom
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault()
+    e.stopPropagation()
     const delta = e.deltaY > 0 ? -0.1 : 0.1
     setZoom(prev => Math.max(0.3, Math.min(3, prev + delta)))
   }
