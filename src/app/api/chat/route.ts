@@ -151,9 +151,6 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // Get course catalog from cache (this is the expensive query)
-    const courseDetails = await getCourseCatalog()
-
     // Fetch basic course info for progress calculation (no deep includes)
     const allCourses = await prisma.course.findMany({
       select: {
@@ -186,14 +183,14 @@ export async function POST(request: NextRequest) {
     const electivesNeeded = 2
     const electivesRemaining = Math.max(0, electivesNeeded - completedElectives.length)
 
-    // Build context for AI
-    const context = `You are an academic advisor assistant working for DegreeMe, a UCF CS/IT degree planning application. You have access to the following information about the student:
+    // Build comprehensive context for AI - single API call approach prevents 429 errors
+    const context = `You are an academic advisor for DegreeMe, a UCF CS/IT degree planning application.
 
-DEGREE PROGRESS SUMMARY:
+STUDENT PROGRESS SUMMARY:
 - Total Credits: ${totalCreditsCompleted}/120 (${creditsRemaining} remaining)
 - Required Courses: ${completedRequired.length}/${requiredCourses.length} completed (${remainingRequired.length} remaining)
 - Electives: ${completedElectives.length}/${electivesNeeded} completed (${electivesRemaining} remaining)
-- 4000-level Electives Completed: ${completed4000Electives.length}
+- 4000-level Electives: ${completed4000Electives.length} completed
 
 COMPLETED COURSES (${completedCourses.length} total):
 ${completedCourses.map(uc => `- ${uc.course.code}: ${uc.course.name} (${uc.course.credits} credits)`).join('\n')}
@@ -201,61 +198,36 @@ ${completedCourses.map(uc => `- ${uc.course.code}: ${uc.course.name} (${uc.cours
 REMAINING REQUIRED COURSES (${remainingRequired.length} courses):
 ${remainingRequired.map(c => `- ${c.code}: ${c.name} (${c.credits} credits)`).join('\n')}
 
-CURRENT SCHEDULE:
-${schedules.length > 0 ? schedules[0].items.map(item =>
+${schedules.length > 0 ? `CURRENT SCHEDULE:
+${schedules[0].items.map(item =>
   `${item.semester} ${item.year}: ${item.course.code} - ${item.course.name} (${item.course.credits} credits)`
-).join('\n') : 'No schedule generated yet'}
+).join('\n')}` : 'No schedule generated yet.'}
 
 DEGREE REQUIREMENTS:
-- Total Credits Required: 120
-- Required Courses: ${requiredCourses.length} courses (core curriculum)
-- Electives Needed: Students need 2 electives total (CS/IT 3/4xxx Restricted Electives)
+- Total Credits: 120
+- Required Core Courses: ${requiredCourses.length} courses
+- Electives: 2 CS/IT 3/4xxx restricted electives
 - Minimum Grade: C (2.0) in all major courses
 
-COMPLETE COURSE CATALOG WITH PREREQUISITES AND DETAILS:
-${courseDetails}
-
-You should help the student with:
-- Understanding their progress toward degree completion
-- Answering questions about prerequisites and course planning
-- Providing advice on course selection
-- Explaining course requirements
-- Helping plan future semesters
-
-IMPORTANT: Respond in plain text only. Do NOT use markdown formatting like **, *, #, or other markdown syntax. Keep your responses conversational and easy to read in plain text format.
-
-Be friendly, concise, and helpful. If you don't know something specific about a course, be honest about it.
-
-Keep your responses short and to the point. Use simple language and avoid using too many words.
-Keep your responses conversational and easy to read in plain text format.`
+Respond in plain text only. Be concise, friendly, and helpful.`
 
     // Initialize Gemini
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" })
 
-    // Build conversation history for context (limit to last 10 messages to reduce context size)
+    // Build conversation history (limit to last 5 messages to reduce size)
     const chatHistory = conversationHistory || []
-    const recentHistory = chatHistory.slice(-10)
+    const recentHistory = chatHistory.slice(-5)
+    const historyText = recentHistory.length > 0
+      ? "\n\nRECENT CONVERSATION:\n" + recentHistory.map((msg: { role: string; content: string }) =>
+          `${msg.role === "user" ? "Student" : "Advisor"}: ${msg.content}`
+        ).join("\n")
+      : ""
 
-    const chat = model.startChat({
-      history: [
-        {
-          role: "user",
-          parts: [{ text: context }]
-        },
-        {
-          role: "model",
-          parts: [{ text: "I understand. I'm your DegreeMe advisor and I'm ready to help you with your UCF CS/IT degree planning. What would you like to know?" }]
-        },
-        ...recentHistory.map((msg: { role: string; content: string }) => ({
-          role: msg.role === "user" ? "user" : "model",
-          parts: [{ text: msg.content }]
-        }))
-      ]
-    })
+    // SINGLE API CALL - combine everything into one request to avoid rapid-fire 429 errors
+    const prompt = `${context}${historyText}\n\nStudent: ${message}\nAdvisor:`
 
-    // Get response from Gemini
-    const result = await chat.sendMessage(message)
+    const result = await model.generateContent(prompt)
     const response = result.response.text()
 
     return NextResponse.json({ response })
