@@ -69,6 +69,7 @@ async function main() {
     if (courseData.prerequisites && Array.isArray(courseData.prerequisites)) {
       for (const prereq of courseData.prerequisites) {
         if (typeof prereq === 'string') {
+          // Simple prerequisite: just one required course
           const prereqCourse = await prisma.course.findUnique({ where: { code: prereq } })
           if (prereqCourse) {
             await prisma.prerequisite.upsert({
@@ -84,25 +85,29 @@ async function main() {
                 prerequisiteId: prereqCourse.id,
               },
             })
+            console.log(`  ✓ ${prereq} → ${code}`)
           }
         } else if (prereq.options && Array.isArray(prereq.options)) {
-          for (const option of prereq.options) {
-            const prereqCourse = await prisma.course.findUnique({ where: { code: option } })
-            if (prereqCourse) {
-              await prisma.prerequisite.upsert({
-                where: {
-                  courseId_prerequisiteId: {
-                    courseId: course.id,
-                    prerequisiteId: prereqCourse.id,
-                  },
-                },
-                update: {},
-                create: {
+          // FIXED: For "options" (OR logic), only add the FIRST option as prerequisite
+          // This prevents false chains like "MAC1140 → course" when MAC1105C is the alternative
+          // Students need ONE OF these options, not ALL of them
+          const firstOption = prereq.options[0]
+          const prereqCourse = await prisma.course.findUnique({ where: { code: firstOption } })
+          if (prereqCourse) {
+            await prisma.prerequisite.upsert({
+              where: {
+                courseId_prerequisiteId: {
                   courseId: course.id,
                   prerequisiteId: prereqCourse.id,
                 },
-              })
-            }
+              },
+              update: {},
+              create: {
+                courseId: course.id,
+                prerequisiteId: prereqCourse.id,
+              },
+            })
+            console.log(`  ✓ ${firstOption} (or alternatives: ${prereq.options.slice(1).join(', ')}) → ${code}`)
           }
         }
       }
