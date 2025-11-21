@@ -249,16 +249,24 @@
     "ENC3250": {
       "name": "Technical Report Writing",
       "credits": 3,
-      "prerequisites": [],
+      "prerequisites": [
+        {
+          "options": ["ENC3241"]
+        }
+      ],
       "corequisites": [],
-      "alternatives": ["ENC3241"], 
+      "alternatives": ["ENC3241"],
       "category": "Technical Writing Requirement",
       "gep_requirement": false
     },
     "ENC4XXX": {
       "name": "See Degree Audit for List",
       "credits": 3,
-      "prerequisites": [],
+      "prerequisites": [
+        {
+          "options": ["ENC3241", "ENC3250"]
+        }
+      ],
       "corequisites": [],
       "category": "Technical Writing Requirement",
       "gep_requirement": false

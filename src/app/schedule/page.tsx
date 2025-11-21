@@ -119,9 +119,16 @@ function SchedulePageContent() {
 
         if (schedulesRes.ok) {
           const schedulesData = await schedulesRes.json()
-          setSchedules(Array.isArray(schedulesData.schedules) ? schedulesData.schedules : [])
+          const fetchedSchedules = Array.isArray(schedulesData.schedules) ? schedulesData.schedules : []
+
+          if (fetchedSchedules.length === 0) {
+            // No schedules exist yet, generate them
+            await generateSchedule(coursesData, userCoursesData)
+          } else {
+            setSchedules(fetchedSchedules)
+          }
         } else {
-          // No schedules exist yet, generate them
+          // API error, try generating anyway
           await generateSchedule(coursesData, userCoursesData)
         }
       }
