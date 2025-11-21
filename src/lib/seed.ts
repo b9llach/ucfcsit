@@ -63,6 +63,20 @@ const courseDescriptions: Record<string, string> = {
   // Ethics & Professional Development
   'PHI3626': 'Ethical issues in science and technology. Topics include privacy, intellectual property, professional responsibility, and societal impact of technology.',
 
+  // Additional Required Courses
+  'CIS4524': 'Managing information technology integration and implementation in organizations. Topics include IT project management, systems integration, change management, and strategic IT planning.',
+  'CGS3763': 'Operating system concepts including process management, memory management, file systems, I/O systems, and concurrent programming with practical applications.',
+  'CNT4603': 'System administration and maintenance covering server management, network administration, security policies, backup strategies, and system monitoring.',
+
+  // GEP Requirements
+  'PSY2012': 'Introduction to psychology covering fundamental concepts in human behavior, cognition, development, personality, and psychological research methods.',
+  'ECO2013': 'Principles of macroeconomics including national income, inflation, unemployment, fiscal and monetary policy, and international trade.',
+
+  // Technical Writing Requirements
+  'ENC3241': 'Technical and professional writing for IT and engineering fields. Focus on documentation, reports, proposals, and professional communication in technical contexts.',
+  'ENC3250': 'Professional writing for technical and scientific audiences. Topics include technical documentation, proposal writing, and effective communication of complex information.',
+  'ENC4XXX': 'Advanced professional writing course selected from approved list. Check degree audit for specific course options and requirements.',
+
   // Elective Common Courses
   'COP4934': 'Special topics in computer science covering emerging technologies and advanced topics not available in regular curriculum.',
   'CAP4720': 'Computer graphics principles including 2D/3D graphics, geometric transformations, rendering, shading, and graphics programming.',
