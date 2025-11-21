@@ -2,9 +2,11 @@
 
 import { useSession, signOut } from "next-auth/react"
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { CourseRoadmap } from "@/components/course-roadmap"
 import {
   DropdownMenu,
@@ -16,6 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { toast } from "sonner"
 import Link from "next/link"
+import { X } from "lucide-react"
 
 interface Course {
   id: string
@@ -41,9 +44,12 @@ interface UserCourse {
 export default function RoadmapPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [courses, setCourses] = useState<Course[]>([])
   const [userCourses, setUserCourses] = useState<UserCourse[]>([])
   const [loading, setLoading] = useState(true)
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null)
+  const focusedCourseCode = searchParams.get("course")
 
   useEffect(() => {
     if (status === "authenticated") {
@@ -52,6 +58,15 @@ export default function RoadmapPage() {
       router.push("/login")
     }
   }, [status, router])
+
+  useEffect(() => {
+    if (focusedCourseCode && courses.length > 0) {
+      const course = courses.find(c => c.code === focusedCourseCode)
+      if (course) {
+        setSelectedCourse(course)
+      }
+    }
+  }, [focusedCourseCode, courses])
 
   const fetchData = async () => {
     try {
@@ -197,22 +212,113 @@ export default function RoadmapPage() {
             </p>
           </div>
 
-          {/* Roadmap */}
-          <Card className="border-black/10 bg-white">
-            <CardHeader>
-              <CardTitle className="text-xl text-black">Interactive Roadmap</CardTitle>
-              <CardDescription className="text-muted-foreground">
-                Click on courses to mark them as completed or view details
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <CourseRoadmap
-                courses={courses}
-                userCourses={userCourses.map(uc => ({ courseId: uc.courseId, completed: uc.completed }))}
-                onCourseClick={(course) => handleCourseToggle(course.id, !isCompleted(course.id))}
-              />
-            </CardContent>
-          </Card>
+          <div className="flex gap-6">
+            {/* Roadmap */}
+            <div className={`transition-all duration-300 ${selectedCourse ? 'w-2/3' : 'w-full'}`}>
+              <Card className="border-black/10 bg-white">
+                <CardHeader>
+                  <CardTitle className="text-xl text-black">Interactive Roadmap</CardTitle>
+                  <CardDescription className="text-muted-foreground">
+                    Click on courses to view details and mark them as complete
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <CourseRoadmap
+                    courses={courses}
+                    userCourses={userCourses.map(uc => ({ courseId: uc.courseId, completed: uc.completed }))}
+                    onCourseClick={(course) => setSelectedCourse(course)}
+                    focusedCourseCode={focusedCourseCode}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Course Details Sidebar */}
+            {selectedCourse && (
+              <div className="w-1/3 animate-in slide-in-from-right duration-300">
+                <Card className="border-black/10 bg-white sticky top-24">
+                  <CardHeader className="pb-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <CardTitle className="text-2xl text-black">{selectedCourse.code}</CardTitle>
+                          <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-700">
+                            {selectedCourse.credits} credits
+                          </Badge>
+                        </div>
+                        <CardDescription className="text-[16px] font-medium text-black">
+                          {selectedCourse.name}
+                        </CardDescription>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setSelectedCourse(null)}
+                        className="h-8 w-8 p-0 rounded-full hover:bg-gray-100"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {isCompleted(selectedCourse.id) && (
+                        <Badge className="bg-green-100 text-green-700 border-green-200">Completed</Badge>
+                      )}
+                      {selectedCourse.gepRequirement && (
+                        <Badge variant="outline" className="border-black/20 text-black">GEP</Badge>
+                      )}
+                      {selectedCourse.isElective && (
+                        <Badge className="bg-purple-100 text-purple-700 border-purple-200">Elective</Badge>
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {selectedCourse.description && (
+                      <div>
+                        <h3 className="text-sm font-semibold text-black mb-2">Description</h3>
+                        <p className="text-[14px] text-muted-foreground leading-relaxed">
+                          {selectedCourse.description}
+                        </p>
+                      </div>
+                    )}
+
+                    {selectedCourse.prerequisites && selectedCourse.prerequisites.length > 0 && (
+                      <div>
+                        <h3 className="text-sm font-semibold text-black mb-2">Prerequisites</h3>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedCourse.prerequisites.map((prereq, index) => (
+                            <Badge key={index} variant="outline" className="border-black/20 text-black">
+                              {prereq.prerequisite.code}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {selectedCourse.note && (
+                      <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                        <p className="text-[13px] text-blue-800">
+                          <span className="font-semibold">Note:</span> {selectedCourse.note}
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="pt-4 border-t border-black/10">
+                      <Button
+                        onClick={() => handleCourseToggle(selectedCourse.id, !isCompleted(selectedCourse.id))}
+                        className={`w-full ${
+                          isCompleted(selectedCourse.id)
+                            ? "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                            : "bg-black hover:bg-black/90 text-white"
+                        } transition-all-smooth`}
+                      >
+                        {isCompleted(selectedCourse.id) ? "Mark as Incomplete" : "Mark as Complete"}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+          </div>
         </div>
       </main>
     </div>

@@ -215,8 +215,10 @@ export default function CourseCatalog() {
                   <Button
                     variant="outline"
                     onClick={() => setFilterCategory("all")}
-                    className={`rounded-full text-[13px] bg-white border-black/20 hover:bg-gray-50 text-black hover:text-black transition-all-smooth ${
-                      filterCategory === "all" ? "border-black/40 bg-gray-50" : ""
+                    className={`rounded-full text-[13px] border-2 hover:bg-gray-50 transition-all-smooth ${
+                      filterCategory === "all"
+                        ? "bg-black text-white hover:bg-black/90 border-black"
+                        : "bg-white text-black border-black/20 hover:text-black"
                     }`}
                   >
                     All
@@ -224,8 +226,10 @@ export default function CourseCatalog() {
                   <Button
                     variant="outline"
                     onClick={() => setFilterCategory("required")}
-                    className={`rounded-full text-[13px] bg-white border-black/20 hover:bg-gray-50 text-black hover:text-black transition-all-smooth ${
-                      filterCategory === "required" ? "border-black/40 bg-gray-50" : ""
+                    className={`rounded-full text-[13px] border-2 hover:bg-gray-50 transition-all-smooth ${
+                      filterCategory === "required"
+                        ? "bg-black text-white hover:bg-black/90 border-black"
+                        : "bg-white text-black border-black/20 hover:text-black"
                     }`}
                   >
                     Required
@@ -233,8 +237,10 @@ export default function CourseCatalog() {
                   <Button
                     variant="outline"
                     onClick={() => setFilterCategory("elective")}
-                    className={`rounded-full text-[13px] bg-white border-black/20 hover:bg-gray-50 text-black hover:text-black transition-all-smooth ${
-                      filterCategory === "elective" ? "border-black/40 bg-gray-50" : ""
+                    className={`rounded-full text-[13px] border-2 hover:bg-gray-50 transition-all-smooth ${
+                      filterCategory === "elective"
+                        ? "bg-black text-white hover:bg-black/90 border-black"
+                        : "bg-white text-black border-black/20 hover:text-black"
                     }`}
                   >
                     Electives
@@ -242,8 +248,10 @@ export default function CourseCatalog() {
                   <Button
                     variant="outline"
                     onClick={() => setFilterCategory("gep")}
-                    className={`rounded-full text-[13px] bg-white border-black/20 hover:bg-gray-50 text-black hover:text-black transition-all-smooth ${
-                      filterCategory === "gep" ? "border-black/40 bg-gray-50" : ""
+                    className={`rounded-full text-[13px] border-2 hover:bg-gray-50 transition-all-smooth ${
+                      filterCategory === "gep"
+                        ? "bg-black text-white hover:bg-black/90 border-black"
+                        : "bg-white text-black border-black/20 hover:text-black"
                     }`}
                   >
                     GEP
@@ -283,7 +291,7 @@ export default function CourseCatalog() {
                         {course.name}
                       </CardDescription>
                     </div>
-                    <Link href="/dashboard/roadmap">
+                    <Link href={`/dashboard/roadmap?course=${course.code}`}>
                       <Button variant="outline" size="sm" className="ml-4 rounded-full text-[12px] bg-white border-black/20 hover:bg-gray-50 text-black hover:text-black transition-all-smooth" title="View in roadmap">
                         View in Roadmap
                       </Button>

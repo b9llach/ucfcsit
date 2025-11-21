@@ -24,6 +24,7 @@ interface RoadmapProps {
   courses: Course[]
   userCourses: UserCourse[]
   onCourseClick?: (course: Course) => void
+  focusedCourseCode?: string | null
 }
 
 interface Position {
@@ -39,7 +40,7 @@ interface GraphNode {
   prerequisites: string[]
 }
 
-export function CourseRoadmap({ courses, userCourses, onCourseClick }: RoadmapProps) {
+export function CourseRoadmap({ courses, userCourses, onCourseClick, focusedCourseCode }: RoadmapProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
@@ -625,6 +626,8 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick }: RoadmapPr
                 } ${
                   hoveredCourse === course.id && !locked ? 'scale-105 shadow-2xl z-20' : 'shadow-lg z-10'
                 } ${
+                  focusedCourseCode === course.code ? 'ring-4 ring-yellow-400 ring-offset-2 scale-110 z-30' : ''
+                } ${
                   completed
                     ? 'bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-500'
                     : available
@@ -700,6 +703,8 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick }: RoadmapPr
                     locked ? 'cursor-not-allowed' : 'cursor-pointer'
                   } ${
                     hoveredCourse === course!.id && !locked ? 'scale-105 shadow-2xl z-20' : 'shadow-lg z-10'
+                  } ${
+                    focusedCourseCode === course!.code ? 'ring-4 ring-yellow-400 ring-offset-2 scale-110 z-30' : ''
                   } ${
                     completed
                       ? 'bg-gradient-to-br from-purple-50 to-purple-100 border-2 border-purple-500'
