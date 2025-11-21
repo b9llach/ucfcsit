@@ -452,7 +452,7 @@ function SchedulePageContent() {
                               >
                                 <div className="flex justify-between items-start mb-2">
                                   <h4 className="font-semibold text-[15px] text-black">{item.course.code}</h4>
-                                  <Badge variant="secondary" className="text-[11px] rounded-full bg-white border-black/10">
+                                  <Badge variant="secondary" className="text-[11px] text-black rounded-full bg-white border-black/10 hover:bg-gray-100 hover:text-white">
                                     {item.course.credits} cr
                                   </Badge>
                                 </div>

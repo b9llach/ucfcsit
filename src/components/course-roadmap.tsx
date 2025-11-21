@@ -67,6 +67,9 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick, focusedCour
     null, null, null, null, null, null
   ])
 
+  // Temporary ghost course for previewing electives not yet selected
+  const [ghostCourseId, setGhostCourseId] = useState<string | null>(null)
+
   // Load selected electives from localStorage on mount
   useEffect(() => {
     const saved = localStorage.getItem('selectedElectives')
@@ -87,15 +90,39 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick, focusedCour
     localStorage.setItem('selectedElectives', JSON.stringify(selectedElectives))
   }, [selectedElectives])
 
+  // Handle ghost course (temporary preview of elective not yet selected)
+  useEffect(() => {
+    if (focusedCourseCode) {
+      const focusedCourse = courses.find(c => c.code === focusedCourseCode)
+      if (focusedCourse && focusedCourse.isElective) {
+        // Check if this elective is already selected
+        const isAlreadySelected = selectedElectives.includes(focusedCourse.id)
+        if (!isAlreadySelected) {
+          // Set as ghost course for preview
+          setGhostCourseId(focusedCourse.id)
+        } else {
+          setGhostCourseId(null)
+        }
+      } else {
+        setGhostCourseId(null)
+      }
+    } else {
+      setGhostCourseId(null)
+    }
+  }, [focusedCourseCode, courses, selectedElectives])
+
   // Separate electives from required courses
   const electiveCourses = courses.filter(c => c.isElective || c.category?.toLowerCase().includes('elective'))
   const requiredCourses = courses.filter(c => !c.isElective && (!c.category || !c.category.toLowerCase().includes('elective')))
 
-  const isCompleted = (courseId: string) => {
-    return userCourses.some(uc => uc.courseId === courseId && uc.completed)
-  }
+  // Get the ghost course object if ghostCourseId is set
+  const ghostCourse = ghostCourseId ? courses.find(c => c.id === ghostCourseId) : null
 
-  const getCourseStatus = (course: Course) => {
+  const isCompleted = useCallback((courseId: string) => {
+    return userCourses.some(uc => uc.courseId === courseId && uc.completed)
+  }, [userCourses])
+
+  const getCourseStatus = useCallback((course: Course) => {
     const completed = isCompleted(course.id)
     if (completed) return 'completed'
 
@@ -117,7 +144,7 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick, focusedCour
     if (prereqsMet) return 'available'
 
     return 'locked'
-  }
+  }, [isCompleted])
 
   // Zoom controls
   const handleZoomIn = () => {
@@ -195,7 +222,15 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick, focusedCour
       .map(id => courses.find(c => c.id === id))
       .filter(c => c !== undefined) as Course[]
 
+    // Add ghost course if present (temporary preview of unselected elective)
+    const electivesWithGhost = ghostCourse
+      ? [...selectedElectiveCourses, ghostCourse]
+      : selectedElectiveCourses
+
     console.log('Selected electives:', selectedElectiveCourses.map(c => c.code).join(', '))
+    if (ghostCourse) {
+      console.log('Ghost course (preview):', ghostCourse.code)
+    }
 
     // Build course map and graph nodes (required courses + selected electives + all prerequisites)
     const courseMap = new Map<string, Course>()
@@ -229,11 +264,11 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick, focusedCour
     // Add required courses and their prerequisites
     requiredCourses.forEach(c => addCourseToGraph(c))
 
-    // Add selected electives and their prerequisites
-    selectedElectiveCourses.forEach(c => addCourseToGraph(c))
+    // Add selected electives (including ghost course preview) and their prerequisites
+    electivesWithGhost.forEach(c => addCourseToGraph(c))
 
     // Build reverse dependencies (which courses depend on this course)
-    const allCoursesToProcess = [...requiredCourses, ...selectedElectiveCourses]
+    const allCoursesToProcess = [...requiredCourses, ...electivesWithGhost]
     allCoursesToProcess.forEach(course => {
       if (course.prerequisites) {
         course.prerequisites.forEach(p => {
@@ -494,7 +529,7 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick, focusedCour
     })
 
     console.log(`Total connections drawn: ${connectionCount}`)
-  }, [courses, userCourses, selectedElectives])
+  }, [courses, userCourses, selectedElectives, ghostCourse, getCourseStatus, requiredCourses])
 
   return (
     <div className="relative w-full h-full flex flex-col bg-gradient-to-br from-gray-50 to-white rounded-2xl overflow-hidden border border-gray-200 shadow-inner">
@@ -785,6 +820,84 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick, focusedCour
                 </Card>
               )
             })}
+
+          {/* Ghost Course - Temporary Preview */}
+          {ghostCourse && (() => {
+            const pos = positions.get(ghostCourse.id)
+            if (!pos) return null
+
+            const status = getCourseStatus(ghostCourse)
+            const completed = status === 'completed'
+            const available = status === 'available'
+            const locked = status === 'locked'
+
+            return (
+              <Card
+                key={`ghost-${ghostCourse.id}`}
+                onClick={() => onCourseClick?.(ghostCourse)}
+                onMouseEnter={() => setHoveredCourse(ghostCourse.id)}
+                onMouseLeave={() => setHoveredCourse(null)}
+                className={`absolute transition-all duration-200 cursor-pointer opacity-80 ${
+                  hoveredCourse === ghostCourse.id ? 'scale-105 shadow-2xl z-20' : 'shadow-lg z-10'
+                } ${
+                  focusedCourseCode === ghostCourse.code ? 'ring-4 ring-yellow-400 ring-offset-2 scale-110 z-30' : ''
+                } ${
+                  completed
+                    ? 'bg-gradient-to-br from-purple-50 to-purple-100 border-2 border-dashed border-purple-400'
+                    : available
+                    ? 'bg-gradient-to-br from-purple-100 to-purple-200 border-2 border-dashed border-purple-500'
+                    : 'bg-gradient-to-br from-purple-50 to-purple-100 border-2 border-dashed border-purple-300'
+                }`}
+                style={{
+                  left: `${pos.x}px`,
+                  top: `${pos.y}px`,
+                  width: '200px',
+                  minHeight: '100px',
+                }}
+              >
+                <div className="p-3.5 h-full flex flex-col relative">
+                  {/* X button to dismiss preview */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setGhostCourseId(null)
+                      window.history.replaceState({}, '', '/dashboard/roadmap')
+                    }}
+                    className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-lg z-40 transition-colors"
+                    title="Dismiss preview"
+                  >
+                    ✕
+                  </button>
+
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center gap-1">
+                      <h3 className="font-bold text-purple-900 text-sm leading-tight">{ghostCourse.code}</h3>
+                      <Badge variant="secondary" className="text-[9px] bg-purple-200 text-purple-800 border-purple-400 px-1.5 py-0 font-bold">
+                        PREVIEW
+                      </Badge>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-700 mb-2 line-clamp-2 flex-grow">
+                    {ghostCourse.name}
+                  </p>
+                  <div className="flex items-center justify-between pt-2 border-t border-purple-300">
+                    <Badge variant="secondary" className="text-xs bg-white/80 hover:bg-white/80 border border-purple-300 px-2 py-0.5 font-semibold text-purple-900 hover:text-purple-900">
+                      {ghostCourse.credits} credits
+                    </Badge>
+                    {completed && (
+                      <span className="text-xs font-bold text-green-700">Completed</span>
+                    )}
+                    {available && !completed && (
+                      <span className="text-xs font-bold text-purple-700">Available</span>
+                    )}
+                    {locked && (
+                      <span className="text-xs font-medium text-gray-500">Locked</span>
+                    )}
+                  </div>
+                </div>
+              </Card>
+            )
+          })()}
           </div>
         </div>
       </div>
