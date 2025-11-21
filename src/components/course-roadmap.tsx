@@ -166,15 +166,33 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick, focusedCour
     setPan({ x: 0, y: 0 })
   }
 
-  // Mouse wheel zoom
+  // Mouse wheel zoom - zoom into cursor position
   const handleWheel = useCallback((e: WheelEvent) => {
     // Only prevent default if we're actually over the roadmap container
     if (e.target === containerRef.current || containerRef.current?.contains(e.target as Node)) {
       e.preventDefault()
+
+      const container = containerRef.current
+      if (!container) return
+
+      // Get mouse position relative to container
+      const rect = container.getBoundingClientRect()
+      const mouseX = e.clientX - rect.left
+      const mouseY = e.clientY - rect.top
+
+      // Calculate zoom delta
       const delta = e.deltaY > 0 ? -0.1 : 0.1
-      setZoom(prev => Math.max(0.3, Math.min(3, prev + delta)))
+      const newZoom = Math.max(0.3, Math.min(3, zoom + delta))
+
+      // Adjust pan to zoom into mouse position
+      // Formula: new_pan = mouse_pos - (mouse_pos - old_pan) * (new_zoom / old_zoom)
+      setZoom(newZoom)
+      setPan(prev => ({
+        x: mouseX - (mouseX - prev.x) * (newZoom / zoom),
+        y: mouseY - (mouseY - prev.y) * (newZoom / zoom)
+      }))
     }
-  }, [])
+  }, [zoom])
 
   // Add non-passive wheel event listener to prevent page scroll
   useEffect(() => {
@@ -189,9 +207,10 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick, focusedCour
 
   // Pan controls
   const handleMouseDown = (e: React.MouseEvent) => {
-    // Only start dragging if clicking on the container or canvas (not on cards or other elements)
-    if (e.target === containerRef.current || (e.target as HTMLElement).closest('canvas')) {
-      e.stopPropagation() // Prevent event from bubbling up
+    const target = e.target as HTMLElement
+    // Start dragging if NOT clicking on a card or button
+    if (!target.closest('.course-card') && !target.closest('button') && !target.closest('select')) {
+      e.preventDefault()
       setIsDragging(true)
       setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y })
     }
@@ -199,7 +218,7 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick, focusedCour
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (isDragging) {
-      e.stopPropagation() // Prevent event from bubbling up
+      e.preventDefault()
       setPan({
         x: e.clientX - dragStart.x,
         y: e.clientY - dragStart.y
@@ -207,10 +226,7 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick, focusedCour
     }
   }
 
-  const handleMouseUp = (e: React.MouseEvent) => {
-    if (isDragging) {
-      e.stopPropagation() // Prevent event from bubbling up
-    }
+  const handleMouseUp = () => {
     setIsDragging(false)
   }
 
@@ -674,7 +690,7 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick, focusedCour
                 onClick={() => onCourseClick?.(course)}
                 onMouseEnter={() => setHoveredCourse(course.id)}
                 onMouseLeave={() => setHoveredCourse(null)}
-                className={`absolute transition-all duration-200 cursor-pointer ${
+                className={`course-card absolute transition-all duration-200 cursor-pointer ${
                   hoveredCourse === course.id ? 'scale-105 shadow-2xl z-20' : 'shadow-lg z-10'
                 } ${
                   focusedCourseCode === course.code ? 'ring-4 ring-yellow-400 ring-offset-2 scale-110 z-30' : ''
@@ -750,7 +766,7 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick, focusedCour
                   onClick={() => onCourseClick?.(course!)}
                   onMouseEnter={() => setHoveredCourse(course!.id)}
                   onMouseLeave={() => setHoveredCourse(null)}
-                  className={`absolute transition-all duration-200 cursor-pointer ${
+                  className={`course-card absolute transition-all duration-200 cursor-pointer ${
                     hoveredCourse === course!.id ? 'scale-105 shadow-2xl z-20' : 'shadow-lg z-10'
                   } ${
                     focusedCourseCode === course!.code ? 'ring-4 ring-yellow-400 ring-offset-2 scale-110 z-30' : ''
@@ -819,7 +835,7 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick, focusedCour
                 onClick={() => onCourseClick?.(ghostCourse)}
                 onMouseEnter={() => setHoveredCourse(ghostCourse.id)}
                 onMouseLeave={() => setHoveredCourse(null)}
-                className={`absolute transition-all duration-200 cursor-pointer opacity-80 ${
+                className={`course-card absolute transition-all duration-200 cursor-pointer opacity-80 ${
                   hoveredCourse === ghostCourse.id ? 'scale-105 shadow-2xl z-20' : 'shadow-lg z-10'
                 } ${
                   focusedCourseCode === ghostCourse.code ? 'ring-4 ring-yellow-400 ring-offset-2 scale-110 z-30' : ''
