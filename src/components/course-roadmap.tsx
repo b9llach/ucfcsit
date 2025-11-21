@@ -617,11 +617,13 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick }: RoadmapPr
             return (
               <Card
                 key={course.id}
-                onClick={() => onCourseClick?.(course)}
+                onClick={() => !locked && onCourseClick?.(course)}
                 onMouseEnter={() => setHoveredCourse(course.id)}
                 onMouseLeave={() => setHoveredCourse(null)}
-                className={`absolute cursor-pointer transition-all duration-200 ${
-                  hoveredCourse === course.id ? 'scale-105 shadow-2xl z-20' : 'shadow-lg z-10'
+                className={`absolute transition-all duration-200 ${
+                  locked ? 'cursor-not-allowed' : 'cursor-pointer'
+                } ${
+                  hoveredCourse === course.id && !locked ? 'scale-105 shadow-2xl z-20' : 'shadow-lg z-10'
                 } ${
                   completed
                     ? 'bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-500'
@@ -691,11 +693,13 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick }: RoadmapPr
               return (
                 <Card
                   key={course!.id}
-                  onClick={() => onCourseClick?.(course!)}
+                  onClick={() => !locked && onCourseClick?.(course!)}
                   onMouseEnter={() => setHoveredCourse(course!.id)}
                   onMouseLeave={() => setHoveredCourse(null)}
-                  className={`absolute cursor-pointer transition-all duration-200 ${
-                    hoveredCourse === course!.id ? 'scale-105 shadow-2xl z-20' : 'shadow-lg z-10'
+                  className={`absolute transition-all duration-200 ${
+                    locked ? 'cursor-not-allowed' : 'cursor-pointer'
+                  } ${
+                    hoveredCourse === course!.id && !locked ? 'scale-105 shadow-2xl z-20' : 'shadow-lg z-10'
                   } ${
                     completed
                       ? 'bg-gradient-to-br from-purple-50 to-purple-100 border-2 border-purple-500'

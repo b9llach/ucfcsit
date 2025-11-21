@@ -8,7 +8,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Checkbox } from "@/components/ui/checkbox"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,7 +16,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { toast } from "sonner"
 import Link from "next/link"
 
 interface Course {
@@ -38,16 +36,16 @@ interface UserCourse {
   id: string
   courseId: string
   completed: boolean
-  course: Course
 }
 
-export default function CoursesPage() {
+export default function CourseCatalog() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [courses, setCourses] = useState<Course[]>([])
   const [userCourses, setUserCourses] = useState<UserCourse[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
+  const [filterCategory, setFilterCategory] = useState<string>("all")
 
   useEffect(() => {
     if (status === "authenticated") {
@@ -82,56 +80,37 @@ export default function CoursesPage() {
     }
   }
 
-  const handleCourseToggle = async (courseId: string, completed: boolean) => {
-    const course = courses.find(c => c.id === courseId)
-    const courseName = course?.code || "Course"
-
-    try {
-      const response = await fetch("/api/user/courses", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ courseId, completed }),
-      })
-
-      if (response.ok) {
-        fetchData()
-        toast.success(
-          completed
-            ? `${courseName} marked as completed`
-            : `${courseName} unmarked`
-        )
-      } else {
-        toast.error("Failed to update course")
-      }
-    } catch (error) {
-      console.error("Error updating course:", error)
-      toast.error("An error occurred")
-    }
-  }
-
   const isCompleted = (courseId: string) => {
     return userCourses.some(uc => uc.courseId === courseId && uc.completed)
   }
 
-  const requiredCourses = courses.filter(course =>
-    !course.category || !course.category.toLowerCase().includes('elective')
-  )
-  const electiveCourses = courses.filter(course =>
-    course.category && course.category.toLowerCase().includes('elective')
-  )
-
   const filterCourses = (courseList: Course[]) => {
-    if (!searchQuery) return courseList
-    return courseList.filter(course =>
-      course.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      course.name.toLowerCase().includes(searchQuery.toLowerCase())
-    )
+    let filtered = courseList
+
+    // Filter by category
+    if (filterCategory !== "all") {
+      if (filterCategory === "required") {
+        filtered = filtered.filter(c => !c.isElective)
+      } else if (filterCategory === "elective") {
+        filtered = filtered.filter(c => c.isElective)
+      } else if (filterCategory === "gep") {
+        filtered = filtered.filter(c => c.gepRequirement)
+      }
+    }
+
+    // Filter by search query
+    if (searchQuery) {
+      filtered = filtered.filter(course =>
+        course.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        course.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (course.description?.toLowerCase().includes(searchQuery.toLowerCase()))
+      )
+    }
+
+    return filtered
   }
 
-  const filteredRequired = filterCourses(requiredCourses)
-  const filteredElectives = filterCourses(electiveCourses)
+  const filteredCourses = filterCourses(courses)
 
   if (status === "loading" || loading) {
     return (
@@ -157,7 +136,7 @@ export default function CoursesPage() {
                   Overview
                 </Link>
                 <Link href="/dashboard/courses" className="text-black transition-all-smooth">
-                  Courses
+                  Course Catalog
                 </Link>
                 <Link href="/dashboard/roadmap" className="text-black/70 hover:text-black transition-all-smooth">
                   Roadmap
@@ -208,151 +187,148 @@ export default function CoursesPage() {
 
       {/* Main Content */}
       <main className="pt-20 pb-16 px-6">
-        <div className="max-w-[1400px] mx-auto">
+        <div className="max-w-[1200px] mx-auto">
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-5xl font-semibold text-black mb-3 tracking-tight">
-              Courses
+              Course Catalog
             </h1>
             <p className="text-[19px] text-muted-foreground">
-              Manage and track all your courses
+              Explore the UCF CS/IT curriculum and learn about each course
             </p>
           </div>
 
-          {/* Search */}
-          <div className="mb-8 max-w-xl">
-            <div className="relative">
-              <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <Input
-                type="text"
-                placeholder="Search courses..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-12 rounded-full border-black/20 bg-white"
-              />
-            </div>
-          </div>
-
-          {/* Required Courses */}
-          <div className="mb-12">
-            <h2 className="text-2xl font-semibold text-black mb-6">Required Courses</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredRequired.map((course) => {
-                const completed = isCompleted(course.id)
-                return (
-                  <Card
-                    key={course.id}
-                    className={`cursor-pointer transition-all-smooth border-black/10 hover:shadow-md bg-white ${
-                      completed ? 'ring-2 ring-green-500/20 bg-green-50/30' : ''
-                    }`}
-                    onClick={() => handleCourseToggle(course.id, !completed)}
+          {/* Search and Filter */}
+          <Card className="border-black/10 bg-white mb-8">
+            <CardContent className="pt-6">
+              <div className="flex flex-col md:flex-row gap-4">
+                <div className="flex-1">
+                  <Input
+                    type="text"
+                    placeholder="Search courses by code, name, or description..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="h-12 text-[14px]"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant={filterCategory === "all" ? "default" : "outline"}
+                    onClick={() => setFilterCategory("all")}
+                    className="rounded-full text-[13px]"
                   >
-                    <CardContent className="p-5">
-                      <div className="flex items-start space-x-3">
-                        <Checkbox
-                          checked={completed}
-                          onCheckedChange={(checked) => handleCourseToggle(course.id, checked as boolean)}
-                          onClick={(e) => e.stopPropagation()}
-                          className="mt-1"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex justify-between items-start mb-2">
-                            <h4 className="font-semibold text-[15px] text-black">{course.code}</h4>
-                            <Badge variant="secondary" className="text-[11px] rounded-full bg-white">
-                              {course.credits} cr
-                            </Badge>
-                          </div>
-                          <p className="text-[13px] text-muted-foreground line-clamp-2">
-                            {course.name}
-                          </p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )
-              })}
-            </div>
-            {filteredRequired.length === 0 && (
-              <Card className="border-black/10 bg-white">
-                <CardContent className="py-16 text-center">
-                  <svg className="w-16 h-16 mx-auto text-black/20 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                  <h3 className="text-lg font-semibold text-black mb-2">No courses found</h3>
-                  <p className="text-[14px] text-muted-foreground max-w-sm mx-auto">
-                    {searchQuery
-                      ? `No required courses match "${searchQuery}". Try adjusting your search.`
-                      : "No required courses available. Please check back later."}
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-
-          {/* Elective Courses */}
-          <div>
-            <h2 className="text-2xl font-semibold text-black mb-6">Electives</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredElectives.map((course) => {
-                const completed = isCompleted(course.id)
-                return (
-                  <Card
-                    key={course.id}
-                    className={`cursor-pointer transition-all-smooth border-black/10 hover:shadow-md bg-white ${
-                      completed ? 'ring-2 ring-green-500/20 bg-green-50/30' : ''
-                    }`}
-                    onClick={() => handleCourseToggle(course.id, !completed)}
+                    All
+                  </Button>
+                  <Button
+                    variant={filterCategory === "required" ? "default" : "outline"}
+                    onClick={() => setFilterCategory("required")}
+                    className="rounded-full text-[13px]"
                   >
-                    <CardContent className="p-5">
-                      <div className="flex items-start space-x-3">
-                        <Checkbox
-                          checked={completed}
-                          onCheckedChange={(checked) => handleCourseToggle(course.id, checked as boolean)}
-                          onClick={(e) => e.stopPropagation()}
-                          className="mt-1"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex justify-between items-start mb-2">
-                            <h4 className="font-semibold text-[15px] text-black">{course.code}</h4>
-                            <Badge variant="secondary" className="text-[11px] rounded-full bg-white">
-                              {course.credits} cr
-                            </Badge>
-                          </div>
-                          <p className="text-[13px] text-muted-foreground line-clamp-2">
-                            {course.name}
-                          </p>
-                        </div>
+                    Required
+                  </Button>
+                  <Button
+                    variant={filterCategory === "elective" ? "default" : "outline"}
+                    onClick={() => setFilterCategory("elective")}
+                    className="rounded-full text-[13px]"
+                  >
+                    Electives
+                  </Button>
+                  <Button
+                    variant={filterCategory === "gep" ? "default" : "outline"}
+                    onClick={() => setFilterCategory("gep")}
+                    className="rounded-full text-[13px]"
+                  >
+                    GEP
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Course List */}
+          <div className="space-y-4">
+            {filteredCourses.map(course => (
+              <Card key={course.id} className="border-black/10 bg-white hover:shadow-md transition-shadow">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <CardTitle className="text-xl text-black">{course.code}</CardTitle>
+                        <Badge variant="secondary" className="text-xs font-semibold">
+                          {course.credits} credits
+                        </Badge>
+                        {isCompleted(course.id) && (
+                          <Badge className="text-xs bg-green-100 text-green-700 border-green-200">
+                            Completed
+                          </Badge>
+                        )}
+                        {course.gepRequirement && (
+                          <Badge variant="outline" className="text-xs">GEP</Badge>
+                        )}
+                        {course.isElective && (
+                          <Badge className="text-xs bg-purple-100 text-purple-700 border-purple-200">
+                            Elective
+                          </Badge>
+                        )}
                       </div>
-                    </CardContent>
-                  </Card>
-                )
-              })}
-            </div>
-            {filteredElectives.length === 0 && (
-              <Card className="border-black/10 bg-white">
-                <CardContent className="py-16 text-center">
-                  <svg className="w-16 h-16 mx-auto text-black/20 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                  <h3 className="text-lg font-semibold text-black mb-2">No electives found</h3>
-                  <p className="text-[14px] text-muted-foreground max-w-sm mx-auto">
-                    {searchQuery
-                      ? `No elective courses match "${searchQuery}". Try a different search term.`
-                      : "Choose electives from the roadmap page to add them to your plan."}
-                  </p>
-                  {!searchQuery && (
-                    <Link href="/dashboard/roadmap" className="inline-block mt-4">
-                      <Button className="bg-accent hover:bg-accent/90 text-accent-foreground px-6 h-10 text-[13px] rounded-full transition-all-smooth">
-                        View Roadmap
+                      <CardDescription className="text-[15px] font-medium text-black">
+                        {course.name}
+                      </CardDescription>
+                    </div>
+                    <Link href="/dashboard/roadmap">
+                      <Button variant="outline" size="sm" className="text-[12px]" title="View in roadmap">
+                        View in Roadmap
                       </Button>
                     </Link>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {course.description && (
+                    <p className="text-[14px] text-muted-foreground mb-4 leading-relaxed">
+                      {course.description}
+                    </p>
+                  )}
+
+                  {course.prerequisites && course.prerequisites.length > 0 && (
+                    <div className="mb-3">
+                      <span className="text-[13px] font-semibold text-black mr-2">Prerequisites:</span>
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        {course.prerequisites.map((prereq, index) => (
+                          <Badge key={index} variant="outline" className="text-[12px]">
+                            {prereq.prerequisite.code}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {course.note && (
+                    <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <p className="text-[13px] text-blue-800">
+                        <span className="font-semibold">Note:</span> {course.note}
+                      </p>
+                    </div>
                   )}
                 </CardContent>
               </Card>
-            )}
+            ))}
           </div>
+
+          {filteredCourses.length === 0 && (
+            <Card className="border-black/10 bg-white">
+              <CardContent className="py-16 text-center">
+                <svg className="w-16 h-16 mx-auto text-black/20 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <h3 className="text-lg font-semibold text-black mb-2">No courses found</h3>
+                <p className="text-[14px] text-muted-foreground max-w-sm mx-auto">
+                  {searchQuery
+                    ? `No courses match "${searchQuery}". Try adjusting your search.`
+                    : "No courses available in this category."}
+                </p>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </main>
     </div>
