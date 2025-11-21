@@ -188,8 +188,6 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick, focusedCour
       // Skip if already added
       if (graphNodes.has(course.id)) return
 
-      console.log(`Adding ${course.code} to graph`)
-
       // Add to maps
       courseMap.set(course.id, course)
       graphNodes.set(course.id, {
@@ -201,14 +199,10 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick, focusedCour
 
       // Recursively add prerequisites
       if (course.prerequisites && course.prerequisites.length > 0) {
-        console.log(`  ${course.code} has prerequisites:`, course.prerequisites.map(p => p.prerequisite.code).join(', '))
         course.prerequisites.forEach(p => {
           const prereqCourse = courses.find(c => c.id === p.prerequisite.id)
           if (prereqCourse) {
-            console.log(`    Found prerequisite ${prereqCourse.code} for ${course.code}`)
             addCourseToGraph(prereqCourse)
-          } else {
-            console.warn(`    Could not find prerequisite with ID ${p.prerequisite.id} for ${course.code}`)
           }
         })
       }
@@ -251,10 +245,7 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick, focusedCour
 
       const calcLevel = (courseId: string): number => {
         const node = graphNodes.get(courseId)
-        if (!node) {
-          console.warn(`calcLevel: Node not found for ID ${courseId}`)
-          return 0
-        }
+        if (!node) return 0
 
         // Already calculated
         if (node.level >= 0) return node.level
@@ -267,7 +258,6 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick, focusedCour
 
         // No prerequisites = level 0 (foundational courses)
         if (node.prerequisites.length === 0) {
-          console.log(`${node.course.code} has no prerequisites, setting to level 0`)
           node.level = 0
           return 0
         }
@@ -276,21 +266,16 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick, focusedCour
 
         // Level = max(prerequisite levels) + 1
         let maxPrereqLevel = -1
-        console.log(`Calculating level for ${node.course.code}, checking ${node.prerequisites.length} prerequisites`)
         for (const prereqId of node.prerequisites) {
           const prereqNode = graphNodes.get(prereqId)
           if (prereqNode) {
             const prereqLevel = calcLevel(prereqId)
-            console.log(`  Prerequisite ${prereqNode.course.code} is at level ${prereqLevel}`)
             maxPrereqLevel = Math.max(maxPrereqLevel, prereqLevel)
-          } else {
-            console.warn(`  Prerequisite with ID ${prereqId} not found in graphNodes for ${node.course.code}`)
           }
         }
 
         inCalculation.delete(courseId)
         node.level = maxPrereqLevel + 1
-        console.log(`${node.course.code} assigned to level ${node.level}`)
         visited.add(courseId)
 
         return node.level

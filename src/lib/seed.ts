@@ -239,7 +239,63 @@ async function main() {
       }
     }
   }
-  
+
+  // Create relationships for electives
+  console.log('🔗 Creating elective relationships...')
+
+  for (const [electiveLevel, electiveCourses] of Object.entries(electives)) {
+    for (const [code, courseData] of Object.entries(electiveCourses)) {
+      const course = await prisma.course.findUnique({ where: { code } })
+      if (!course) continue
+
+      // Handle prerequisites for electives
+      if (courseData.prerequisites && Array.isArray(courseData.prerequisites)) {
+        for (const prereq of courseData.prerequisites) {
+          if (typeof prereq === 'string') {
+            // Simple prerequisite: just one required course
+            const prereqCourse = await prisma.course.findUnique({ where: { code: prereq } })
+            if (prereqCourse) {
+              await prisma.prerequisite.upsert({
+                where: {
+                  courseId_prerequisiteId: {
+                    courseId: course.id,
+                    prerequisiteId: prereqCourse.id,
+                  },
+                },
+                update: {},
+                create: {
+                  courseId: course.id,
+                  prerequisiteId: prereqCourse.id,
+                },
+              })
+              console.log(`  ✓ ${prereq} → ${code}`)
+            }
+          } else if (prereq.options && Array.isArray(prereq.options)) {
+            // For "options" (OR logic), only add the FIRST option as prerequisite
+            const firstOption = prereq.options[0]
+            const prereqCourse = await prisma.course.findUnique({ where: { code: firstOption } })
+            if (prereqCourse) {
+              await prisma.prerequisite.upsert({
+                where: {
+                  courseId_prerequisiteId: {
+                    courseId: course.id,
+                    prerequisiteId: prereqCourse.id,
+                  },
+                },
+                update: {},
+                create: {
+                  courseId: course.id,
+                  prerequisiteId: prereqCourse.id,
+                },
+              })
+              console.log(`  ✓ ${firstOption} (or alternatives: ${prereq.options.slice(1).join(', ')}) → ${code}`)
+            }
+          }
+        }
+      }
+    }
+  }
+
   console.log('✅ Database seeding completed!')
 }
 
