@@ -47,7 +47,7 @@ export function HelpTour() {
     },
     {
       title: "Need Help?",
-      description: "Use the feedback button (bottom right) anytime to report bugs or suggest features!",
+      description: "Use the feedback button (top right) anytime to report bugs or suggest features!",
       icon: "💬"
     }
   ]
