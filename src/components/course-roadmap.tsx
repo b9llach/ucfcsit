@@ -517,19 +517,14 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick, focusedCour
                 title={`Choose elective ${index + 1}`}
               >
                 <option value="">Select...</option>
-                <optgroup label="4000-Level">
+                <optgroup label="4000-Level and Below">
                   {electiveCourses
-                    .filter(c => c.electiveLevel === '4000_level')
-                    .filter(c => !selectedElectives.includes(c.id) || selected === c.id)
-                    .map(course => (
-                      <option key={course.id} value={course.id}>
-                        {course.code}
-                      </option>
-                    ))}
-                </optgroup>
-                <optgroup label="5000-Level">
-                  {electiveCourses
-                    .filter(c => c.electiveLevel === '5000_level')
+                    .filter(c => {
+                      // Extract course level from code (e.g., "CIS4524" -> level 4)
+                      const match = c.code.match(/(\d)/)
+                      const level = match ? parseInt(match[1]) : 0
+                      return level <= 4 // Only show 4000-level and below
+                    })
                     .filter(c => !selectedElectives.includes(c.id) || selected === c.id)
                     .map(course => (
                       <option key={course.id} value={course.id}>

@@ -211,7 +211,7 @@ export default function CourseCatalog() {
                     placeholder="Search courses by code, name, or description..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="h-12 text-[14px] bg-white border-black/20 focus:border-black/30"
+                    className="h-12 text-[14px] text-black bg-white border-black/20 focus:border-black/30"
                   />
                 </div>
                 <div className="flex gap-2">
