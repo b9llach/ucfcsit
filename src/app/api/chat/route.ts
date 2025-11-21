@@ -86,7 +86,12 @@ You should help the student with:
 - Explaining course requirements
 - Helping plan future semesters
 
-Be friendly, concise, and helpful. If you don't know something specific about a course, be honest about it.`
+IMPORTANT: Respond in plain text only. Do NOT use markdown formatting like **, *, #, or other markdown syntax. Keep your responses conversational and easy to read in plain text format.
+
+Be friendly, concise, and helpful. If you don't know something specific about a course, be honest about it.
+
+Keep your responses short and to the point. Use simple language and avoid using too many words.
+Keep your responses conversational and easy to read in plain text format.`
 
     // Initialize Gemini
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
