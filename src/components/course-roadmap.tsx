@@ -546,130 +546,98 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick, focusedCour
   }, [courses, userCourses, selectedElectives, ghostCourse, getCourseStatus, requiredCourses])
 
   return (
-    <div className="relative w-full h-full flex flex-col bg-gradient-to-br from-gray-50 to-white rounded-2xl overflow-hidden border border-gray-200 shadow-inner isolate">
-      {/* Elective Selection Bar */}
-      <div className="px-4 py-3 bg-gradient-to-r from-purple-50 to-purple-100 border-b-2 border-purple-300 flex-shrink-0">
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="text-sm font-bold text-purple-900">Choose Your Electives (2 Required)</h3>
-          <span className="text-xs text-purple-700">
-            {selectedElectives.filter(e => e !== null).length}/2 Selected
-          </span>
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          {selectedElectives.map((selected, index) => (
-            <div key={index} className="flex flex-col">
-              <label className="text-xs font-medium text-purple-800 mb-1">Elective {index + 1}</label>
-              <select
-                value={selected || ''}
-                onChange={(e) => handleElectiveSelect(index, e.target.value)}
-                className="w-full text-xs bg-white border-2 border-purple-300 rounded-lg px-2 py-1.5 text-purple-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 cursor-pointer"
-                title={`Choose elective ${index + 1}`}
-              >
-                <option value="">Select...</option>
-                <optgroup label="4000-Level and Below">
-                  {electiveCourses
-                    .filter(c => {
-                      // Extract course level from code (e.g., "CIS4524" -> level 4)
-                      const match = c.code.match(/(\d)/)
-                      const level = match ? parseInt(match[1]) : 0
-                      return level <= 4 // Only show 4000-level and below
-                    })
-                    .filter(c => !selectedElectives.includes(c.id) || selected === c.id)
-                    .map(course => (
-                      <option key={course.id} value={course.id}>
-                        {course.code}
-                      </option>
-                    ))}
-                </optgroup>
-              </select>
+    <div className="absolute inset-0 flex flex-col bg-gradient-to-br from-gray-50 to-white overflow-hidden">
+      {/* Compact Header - Elective Selection and Zoom Controls */}
+      <div className="flex-shrink-0 bg-white border-b border-gray-200 shadow-sm">
+        {/* Elective Selection */}
+        <div className="px-6 py-3 bg-gradient-to-r from-purple-50 to-purple-100 border-b border-purple-200">
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-bold text-purple-900">Choose Your Electives:</h3>
+              <span className="text-xs text-purple-700 bg-white px-2 py-0.5 rounded-full border border-purple-300">
+                {selectedElectives.filter(e => e !== null).length}/2 Selected
+              </span>
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Header - Info and Legend */}
-      <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200 flex-shrink-0">
-        {/* Course Progression Info */}
-        <div className="flex items-center space-x-3">
-          <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg px-3 py-2 border border-primary/20">
-            <div className="text-xs font-bold text-gray-900 mb-0.5">Course Progression</div>
-            <div className="text-xs text-gray-600">
-              Left to Right
+            <div className="flex gap-3 flex-1">
+              {selectedElectives.map((selected, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <label className="text-xs font-medium text-purple-800 whitespace-nowrap">Elective {index + 1}:</label>
+                  <select
+                    value={selected || ''}
+                    onChange={(e) => handleElectiveSelect(index, e.target.value)}
+                    className="text-xs bg-white border-2 border-purple-300 rounded-lg px-3 py-1.5 text-purple-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 cursor-pointer min-w-[140px]"
+                    title={`Choose elective ${index + 1}`}
+                  >
+                    <option value="">Select...</option>
+                    <optgroup label="4000-Level and Below">
+                      {electiveCourses
+                        .filter(c => {
+                          const match = c.code.match(/(\d)/)
+                          const level = match ? parseInt(match[1]) : 0
+                          return level <= 4
+                        })
+                        .filter(c => !selectedElectives.includes(c.id) || selected === c.id)
+                        .map(course => (
+                          <option key={course.id} value={course.id}>
+                            {course.code}
+                          </option>
+                        ))}
+                    </optgroup>
+                  </select>
+                </div>
+              ))}
             </div>
           </div>
         </div>
 
-        {/* Center - Zoom Controls */}
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={handleZoomOut}
-            className="p-2 rounded-lg bg-white border border-gray-300 hover:bg-gray-50 hover:border-gray-400 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1"
-            aria-label="Zoom out"
-            title="Zoom out (or use mouse wheel)"
-          >
-            <svg className="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
-            </svg>
-          </button>
-
-          <div className="px-3 py-1.5 bg-gray-100 rounded-lg border border-gray-300" title="Current zoom level">
-            <span className="text-xs font-semibold text-gray-700">{Math.round(zoom * 100)}%</span>
+        {/* Zoom Controls */}
+        <div className="px-6 py-2 flex items-center justify-between bg-white">
+          <div className="text-xs text-gray-600 italic">
+            {isDragging ? 'Dragging...' : 'Scroll to zoom • Drag to pan • Click course for details'}
           </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleZoomOut}
+              className="p-1.5 rounded-lg bg-white border border-gray-300 hover:bg-gray-50 transition-colors"
+              aria-label="Zoom out"
+              title="Zoom out"
+            >
+              <svg className="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+              </svg>
+            </button>
 
-          <button
-            onClick={handleZoomIn}
-            className="p-2 rounded-lg bg-white border border-gray-300 hover:bg-gray-50 hover:border-gray-400 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1"
-            aria-label="Zoom in"
-            title="Zoom in (or use mouse wheel)"
-          >
-            <svg className="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-          </button>
+            <div className="px-3 py-1 bg-gray-100 rounded-lg border border-gray-300 min-w-[60px] text-center">
+              <span className="text-xs font-semibold text-gray-700">{Math.round(zoom * 100)}%</span>
+            </div>
 
-          <button
-            onClick={handleResetZoom}
-            className="px-3 py-1.5 rounded-lg bg-white border border-gray-300 hover:bg-gray-50 hover:border-gray-400 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 text-xs font-medium text-gray-700"
-            aria-label="Reset zoom"
-            title="Reset zoom and pan to default"
-          >
-            Reset
-          </button>
+            <button
+              onClick={handleZoomIn}
+              className="p-1.5 rounded-lg bg-white border border-gray-300 hover:bg-gray-50 transition-colors"
+              aria-label="Zoom in"
+              title="Zoom in"
+            >
+              <svg className="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+            </button>
 
-          <div className="ml-2 text-xs text-gray-500 italic">
-            {isDragging ? '🖐️ Dragging' : '🖱️ Scroll to zoom, drag to pan'}
-          </div>
-        </div>
-
-        {/* Legend */}
-        <div className="bg-white rounded-lg px-3 py-2 border border-gray-200">
-          <div className="text-xs font-bold text-gray-900 mb-2">Course Status</div>
-          <div className="flex items-center space-x-4 text-xs">
-            <div className="flex items-center space-x-1.5">
-              <div className="w-4 h-4 rounded bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-500" />
-              <span className="text-gray-700 font-medium">Completed</span>
-            </div>
-            <div className="flex items-center space-x-1.5">
-              <div className="w-4 h-4 rounded bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-500" />
-              <span className="text-gray-700 font-medium">Available</span>
-            </div>
-            <div className="flex items-center space-x-1.5">
-              <div className="w-4 h-4 rounded bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-300" />
-              <span className="text-gray-700 font-medium">Locked</span>
-            </div>
-            <div className="flex items-center space-x-1.5">
-              <div className="w-4 h-4 rounded bg-gradient-to-br from-purple-100 to-purple-200 border-2 border-purple-600" />
-              <span className="text-gray-700 font-medium">Elective</span>
-            </div>
+            <button
+              onClick={handleResetZoom}
+              className="px-3 py-1.5 rounded-lg bg-white border border-gray-300 hover:bg-gray-50 transition-colors text-xs font-medium text-gray-700"
+              aria-label="Reset zoom"
+              title="Reset zoom and pan"
+            >
+              Reset
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Zoomable Canvas Area */}
+      {/* Full Canvas Area */}
       <div
         ref={containerRef}
         className="relative flex-1 overflow-hidden cursor-grab active:cursor-grabbing"
-        style={{ minHeight: '800px' }}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}

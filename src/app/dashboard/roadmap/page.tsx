@@ -249,45 +249,82 @@ function RoadmapContent() {
       </nav>
 
       {/* Page Content */}
-      <div className="min-h-screen bg-white">
-        {/* Main Content */}
-        <main className="pt-20 pb-16 px-6" style={{ position: 'relative', zIndex: 1 }}>
-        <div className="max-w-[1400px] mx-auto">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-5xl font-semibold text-black mb-3 tracking-tight">
+      <div className="fixed inset-0 top-11 bg-white flex">
+        {/* Left Panel - Always Visible */}
+        <div className="w-80 border-r border-black/10 bg-white flex flex-col overflow-y-auto">
+          <div className="p-6">
+            <h1 className="text-3xl font-semibold text-black mb-2 tracking-tight">
               Course Roadmap
             </h1>
-            <p className="text-[19px] text-muted-foreground">
-              Visual representation of your degree path and dependencies
+            <p className="text-sm text-muted-foreground mb-6">
+              Visual representation of your degree path
             </p>
-          </div>
 
-          <div className="flex gap-6">
-            {/* Roadmap */}
-            <div className="flex-1 min-w-0" style={{ width: selectedCourse ? 'calc(100% - 424px)' : '100%' }}>
-              <Card className="border-black/10 bg-white" style={{ width: '100%' }}>
-                <CardHeader>
-                  <CardTitle className="text-xl text-black">Interactive Roadmap</CardTitle>
-                  <CardDescription className="text-muted-foreground">
-                    Click on courses to view details and mark them as complete
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <CourseRoadmap
-                    courses={courses}
-                    userCourses={userCourses.map(uc => ({ courseId: uc.courseId, completed: uc.completed }))}
-                    onCourseClick={(course) => setSelectedCourse(course)}
-                    focusedCourseCode={focusedCourseCode}
-                  />
-                </CardContent>
-              </Card>
+            {/* Stats */}
+            <div className="space-y-3 mb-6">
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <div className="text-xs text-muted-foreground mb-1">Completed</div>
+                <div className="text-2xl font-semibold text-black">
+                  {userCourses.filter(uc => uc.completed).length}
+                </div>
+              </div>
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <div className="text-xs text-muted-foreground mb-1">Total Courses</div>
+                <div className="text-2xl font-semibold text-black">
+                  {courses.length}
+                </div>
+              </div>
             </div>
 
-            {/* Course Details Sidebar */}
-            {selectedCourse && (
-              <div className="w-[400px] flex-shrink-0 animate-in slide-in-from-right duration-300">
-                <Card className="border-black/10 bg-white shadow-lg sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto">
+            {/* Legend */}
+            <div className="mb-6">
+              <h3 className="text-sm font-semibold text-black mb-3">Course Status</h3>
+              <div className="space-y-2 text-xs">
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-500" />
+                  <span className="text-gray-700">Completed</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-500" />
+                  <span className="text-gray-700">Available</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-300" />
+                  <span className="text-gray-700">Locked</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded bg-gradient-to-br from-purple-100 to-purple-200 border-2 border-purple-600" />
+                  <span className="text-gray-700">Elective</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Instructions */}
+            <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <h3 className="text-xs font-semibold text-blue-900 mb-2">Navigation</h3>
+              <ul className="text-xs text-blue-800 space-y-1">
+                <li>• Scroll to zoom in/out</li>
+                <li>• Drag to pan around</li>
+                <li>• Click course for details</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        {/* Center - Full Roadmap */}
+        <div className="flex-1 relative overflow-hidden">
+          <CourseRoadmap
+            courses={courses}
+            userCourses={userCourses.map(uc => ({ courseId: uc.courseId, completed: uc.completed }))}
+            onCourseClick={(course) => setSelectedCourse(course)}
+            focusedCourseCode={focusedCourseCode}
+          />
+        </div>
+
+        {/* Right Panel - Course Details (Slides in when course selected) */}
+        {selectedCourse && (
+          <div className="w-96 border-l border-black/10 bg-white shadow-2xl animate-in slide-in-from-right duration-300 overflow-y-auto">
+            <Card className="border-0 bg-white h-full rounded-none">
                   <CardHeader className="pb-4">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
@@ -382,11 +419,8 @@ function RoadmapContent() {
                     </div>
                   </CardContent>
                 </Card>
-              </div>
-            )}
           </div>
-        </div>
-      </main>
+        )}
       </div>
     </>
   )
