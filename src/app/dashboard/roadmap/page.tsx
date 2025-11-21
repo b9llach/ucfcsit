@@ -31,7 +31,11 @@ interface Course {
   note: string | null
   isElective: boolean
   electiveLevel: string | null
-  prerequisites: { prerequisite: Course }[]
+  prerequisites: {
+    prerequisite: Course & {
+      alternatives?: { alternative: { id: string; code: string } }[]
+    }
+  }[]
 }
 
 interface UserCourse {
@@ -129,7 +133,19 @@ function RoadmapContent() {
   const isLocked = (course: Course) => {
     if (isCompleted(course.id)) return false
     if (!course.prerequisites || course.prerequisites.length === 0) return false
-    return !course.prerequisites.every(p => isCompleted(p.prerequisite.id))
+
+    // Check if all prerequisites are met (considering alternatives)
+    return !course.prerequisites.every(p => {
+      // Check if the prerequisite itself is completed
+      if (isCompleted(p.prerequisite.id)) return true
+
+      // Check if any alternative to this prerequisite is completed
+      if (p.prerequisite.alternatives && p.prerequisite.alternatives.length > 0) {
+        return p.prerequisite.alternatives.some(alt => isCompleted(alt.alternative.id))
+      }
+
+      return false
+    })
   }
 
   if (status === "loading" || loading) {

@@ -220,6 +220,7 @@ function generatePrerequisiteAwareSchedule(
     // For now, we'll handle common cases manually
     const knownAlternatives = [
       ['MAC1105C', 'MAC1140'],  // College Algebra alternatives
+      ['ENC3241', 'ENC3250'],   // Technical Writing alternatives
     ]
 
     for (const altGroup of knownAlternatives) {
@@ -354,7 +355,7 @@ function generatePrerequisiteAwareSchedule(
       const coreqs = corequisiteMap.get(course.id) || []
       const coreqCourses = coreqs
         .map(coreqId => allCoursesToSchedule.find(c => c.id === coreqId))
-        .filter(c => c && !scheduledCourseIds.has(c.id)) as Course[]
+        .filter(c => c && !scheduledCourseIds.has(c.id) && !processedCoreqs.has(c.id)) as Course[]
 
       // Calculate total credits including corequisites
       const totalWithCoreqs = potentialCredits + coreqCourses.reduce((sum, c) => sum + c.credits, 0)
@@ -398,5 +399,17 @@ function generatePrerequisiteAwareSchedule(
   }
 
   console.log(`\nGenerated schedule with ${scheduledCourses.length} courses`)
-  return scheduledCourses
+
+  // Deduplicate: keep only the last occurrence of each course (latest semester)
+  const deduplicatedMap = new Map<string, {courseId: string, semester: string, year: number}>()
+  for (const item of scheduledCourses) {
+    deduplicatedMap.set(item.courseId, item)
+  }
+  const deduplicatedSchedule = Array.from(deduplicatedMap.values())
+
+  if (deduplicatedSchedule.length !== scheduledCourses.length) {
+    console.log(`⚠️  Removed ${scheduledCourses.length - deduplicatedSchedule.length} duplicate courses`)
+  }
+
+  return deduplicatedSchedule
 }

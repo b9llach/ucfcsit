@@ -15,7 +15,13 @@ interface Course {
   note: string | null
   isElective: boolean
   electiveLevel?: string | null
-  prerequisites: { prerequisite: { id: string; code: string } }[]
+  prerequisites: {
+    prerequisite: {
+      id: string
+      code: string
+      alternatives?: { alternative: { id: string; code: string } }[]
+    }
+  }[]
 }
 
 interface UserCourse {
@@ -95,7 +101,19 @@ export function CourseRoadmap({ courses, userCourses, onCourseClick, focusedCour
 
     if (!course.prerequisites || course.prerequisites.length === 0) return 'available'
 
-    const prereqsMet = course.prerequisites.every(p => isCompleted(p.prerequisite.id))
+    // Check if all prerequisites are met (considering alternatives)
+    const prereqsMet = course.prerequisites.every(p => {
+      // Check if the prerequisite itself is completed
+      if (isCompleted(p.prerequisite.id)) return true
+
+      // Check if any alternative to this prerequisite is completed
+      if (p.prerequisite.alternatives && p.prerequisite.alternatives.length > 0) {
+        return p.prerequisite.alternatives.some(alt => isCompleted(alt.alternative.id))
+      }
+
+      return false
+    })
+
     if (prereqsMet) return 'available'
 
     return 'locked'

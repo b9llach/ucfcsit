@@ -14,10 +14,12 @@ export async function GET() {
         requiredBy: {
           include: {
             prerequisite: {
-              select: {
-                id: true,
-                code: true,
-                name: true,
+              include: {
+                alternatives: {
+                  include: {
+                    alternative: true
+                  }
+                }
               }
             }
           }

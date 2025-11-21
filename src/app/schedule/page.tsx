@@ -153,6 +153,10 @@ function SchedulePageContent() {
         setSchedules(data.schedules || [data.schedule])
         setSelectedScheduleIndex(0)
         toast.success(`Generated ${data.schedules?.length || 1} schedule${data.schedules?.length > 1 ? 's' : ''}`)
+      } else {
+        const errorData = await response.json().catch(() => ({ error: "Unknown error" }))
+        console.error("Schedule generation failed:", errorData)
+        toast.error(errorData.error || "Failed to generate schedules")
       }
     } catch (error) {
       console.error("Error generating schedule:", error)
