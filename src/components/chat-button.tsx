@@ -109,8 +109,8 @@ export function ChatButton() {
     }
   }
 
-  // Only show chat for authenticated users
-  if (status !== "authenticated") {
+  // Only hide chat for unauthenticated users
+  if (status === "unauthenticated") {
     return null
   }
 
