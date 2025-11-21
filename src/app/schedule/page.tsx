@@ -237,22 +237,22 @@ function SchedulePageContent() {
             <div className="flex items-center space-x-8">
               {!isSharedView && (
                 <div className="hidden md:flex items-center space-x-8 text-[12px]">
-                  <Link href="/dashboard" className="text-black/70 hover:text-black transition-all-smooth">
+                  <Link href="/dashboard" className="text-black/70 hover:text-black transition-all-smooth pb-1">
                     Overview
                   </Link>
-                  <Link href="/dashboard/courses" className="text-black/70 hover:text-black transition-all-smooth">
+                  <Link href="/dashboard/courses" className="text-black/70 hover:text-black transition-all-smooth pb-1">
                     Courses
                   </Link>
-                  <Link href="/dashboard/roadmap" className="text-black/70 hover:text-black transition-all-smooth">
+                  <Link href="/dashboard/roadmap" className="text-black/70 hover:text-black transition-all-smooth pb-1">
                     Roadmap
                   </Link>
-                  <Link href="/dashboard/progress" className="text-black/70 hover:text-black transition-all-smooth">
+                  <Link href="/dashboard/progress" className="text-black/70 hover:text-black transition-all-smooth pb-1">
                     Progress
                   </Link>
-                  <Link href="/schedule" className="text-black transition-all-smooth">
+                  <Link href="/schedule" className="text-black transition-all-smooth border-b-2 border-black pb-1">
                     Schedule
                   </Link>
-                  <Link href="/feedback" className="text-black/70 hover:text-black transition-all-smooth">
+                  <Link href="/feedback" className="text-black/70 hover:text-black transition-all-smooth pb-1">
                     Feedback
                   </Link>
                 </div>

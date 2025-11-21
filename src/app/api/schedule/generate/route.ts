@@ -318,18 +318,6 @@ function generatePrerequisiteAwareSchedule(
       return prereqsMet
     })
 
-    // Calculate if we should consolidate BEFORE checking available courses
-    const remainingCoursesCheck = allCoursesToSchedule.length - (scheduledCourseIds.size - completedCourseIds.size)
-    const remainingSemestersCheck = semesterPlan.length - i
-    const shouldConsolidateCheck = remainingCoursesCheck <= 8 && remainingCoursesCheck > 0
-    const actualSemestersNeededCheck = Math.ceil(remainingCoursesCheck / 3)
-
-    // Skip this semester if we're consolidating and don't need this many semesters
-    if (shouldConsolidateCheck && i > actualSemestersNeededCheck - 1) {
-      console.log(`Skipping ${semester} ${year} (consolidating ${remainingCoursesCheck} courses into ${actualSemestersNeededCheck} semesters)`)
-      continue
-    }
-
     if (availableCourses.length === 0) {
       console.log(`No courses available for ${semester} ${year}`)
       continue
@@ -337,76 +325,74 @@ function generatePrerequisiteAwareSchedule(
 
     console.log(`Available: ${availableCourses.map(c => c.code).join(', ')}`)
 
-    // Separate required and elective courses
-    const availableRequired = availableCourses.filter(c => !c.isElective)
-    const availableElectives = availableCourses.filter(c => c.isElective)
+    // Calculate remaining courses total
+    const remainingTotal = allCoursesToSchedule.filter(c => !scheduledCourseIds.has(c.id)).length
 
-    // Calculate remaining courses and semesters for better balancing
-    const remainingCourses = allCoursesToSchedule.length - (scheduledCourseIds.size - completedCourseIds.size)
-    const remainingSemesters = semesterPlan.length - i
+    // CONSOLIDATION RULE: If ≤5 courses remain and they're ALL available, schedule them all in ONE semester
+    if (remainingTotal <= 5 && availableCourses.length === remainingTotal) {
+      console.log(`🎯 CONSOLIDATING: All ${remainingTotal} remaining courses are available - scheduling in one semester`)
 
-    // If we have few courses left, pack them into fewer semesters (3+ courses each)
-    const minCoursesPerSemester = 3
-    const actualSemestersNeeded = Math.ceil(remainingCourses / minCoursesPerSemester)
-    const shouldConsolidate = remainingCourses <= 8 && remainingCourses > 0
+      let currentCredits = 0
+      const maxCredits = 18
+      const processedCoreqs = new Set<string>()
+      const coursesToSchedule: Course[] = []
 
-    let avgCoursesPerSemester: number
-    if (shouldConsolidate) {
-      // Pack remaining courses into fewer semesters to avoid sparse scheduling
-      avgCoursesPerSemester = Math.ceil(remainingCourses / actualSemestersNeeded)
-    } else {
-      avgCoursesPerSemester = Math.max(4, Math.ceil(remainingCourses / remainingSemesters))
+      for (const course of availableCourses) {
+        if (processedCoreqs.has(course.id)) continue
+
+        // Get corequisites
+        const coreqs = corequisiteMap.get(course.id) || []
+        const coreqCourses = coreqs
+          .map(coreqId => availableCourses.find(c => c.id === coreqId))
+          .filter(c => c && !processedCoreqs.has(c.id)) as Course[]
+
+        const totalCredits = currentCredits + course.credits +
+          coreqCourses.reduce((sum, c) => sum + c.credits, 0)
+
+        if (totalCredits <= maxCredits) {
+          coursesToSchedule.push(course)
+          currentCredits += course.credits
+          processedCoreqs.add(course.id)
+
+          for (const coreqCourse of coreqCourses) {
+            coursesToSchedule.push(coreqCourse)
+            currentCredits += coreqCourse.credits
+            processedCoreqs.add(coreqCourse.id)
+          }
+        }
+      }
+
+      // Schedule all courses
+      for (const course of coursesToSchedule) {
+        scheduledCourses.push({ courseId: course.id, semester, year })
+        scheduledCourseIds.add(course.id)
+        console.log(`✓ ${course.code} (${course.credits} cr)`)
+      }
+
+      console.log(`${semester} ${year}: ${coursesToSchedule.length} courses, ${currentCredits} credits - FINAL SEMESTER`)
+      break // We're done!
     }
 
-    console.log(`Remaining: ${remainingCourses} courses over ${remainingSemesters} semesters (target: ${avgCoursesPerSemester} per semester, consolidate: ${shouldConsolidate})`)
+    // NORMAL SCHEDULING: Target 4-5 courses per semester
+    const targetCoursesPerSemester = 5
+    const minCoursesPerSemester = 3
+    const maxCredits = 18
 
-    // Calculate how many electives and required courses we should aim for
-    const totalElectivesRemaining = selectedElectives.filter(e => !scheduledCourseIds.has(e.id)).length
-    const totalRequiredRemaining = allCoursesToSchedule.filter(c => !c.isElective && !scheduledCourseIds.has(c.id)).length
+    // If we can only schedule <3 courses but there are more courses coming later, skip this semester
+    if (availableCourses.length < minCoursesPerSemester && remainingTotal > availableCourses.length) {
+      console.log(`⏭️ SKIPPING: Only ${availableCourses.length} available, but ${remainingTotal} total remain - waiting for prerequisites`)
+      continue
+    }
 
-    const electivesPerSemester = Math.ceil(totalElectivesRemaining / Math.max(remainingSemesters, 1))
-    const requiredPerSemester = Math.ceil(totalRequiredRemaining / Math.max(remainingSemesters, 1))
-
-    console.log(`Target: ${requiredPerSemester} required + ${electivesPerSemester} electives = ${requiredPerSemester + electivesPerSemester} total`)
-
-    // Group courses by corequisites
     const coursesToSchedule: Course[] = []
     const processedCoreqs = new Set<string>()
     let currentCredits = 0
-    let requiredAdded = 0
-    let electivesAdded = 0
 
-    const minCredits = 9     // Minimum to stay enrolled
-    const maxCredits = 18    // Maximum 18 credits per semester
-    const targetCourses = Math.min(Math.max(avgCoursesPerSemester, 3), 6) // Aim for 3-6 courses per semester, minimum 3
-
-    // Interleave required and elective courses for better distribution
-    const interleavedCourses: Course[] = []
-    let reqIndex = 0
-    let electIndex = 0
-
-    // Build interleaved list: prioritize required, but mix in electives
-    while (reqIndex < availableRequired.length || electIndex < availableElectives.length) {
-      // Add 2-3 required courses
-      for (let i = 0; i < 2 && reqIndex < availableRequired.length; i++) {
-        interleavedCourses.push(availableRequired[reqIndex++])
-      }
-      // Add 1 elective
-      if (electIndex < availableElectives.length) {
-        interleavedCourses.push(availableElectives[electIndex++])
-      }
-    }
-
-    // Now schedule courses from the interleaved list
-    for (const course of interleavedCourses) {
+    for (const course of availableCourses) {
       if (processedCoreqs.has(course.id)) continue
-      if (scheduledCourseIds.has(course.id)) continue
 
-      // Check if we've scheduled enough courses for this semester
-      if (coursesToSchedule.length >= targetCourses) break
-
-      // Check if adding this course would exceed max credits
-      const potentialCredits = currentCredits + course.credits
+      // Stop if we've reached target number of courses
+      if (coursesToSchedule.length >= targetCoursesPerSemester) break
 
       // Get corequisites for this course
       const coreqs = corequisiteMap.get(course.id) || []
@@ -415,31 +401,20 @@ function generatePrerequisiteAwareSchedule(
         .filter(c => c && !scheduledCourseIds.has(c.id) && !processedCoreqs.has(c.id)) as Course[]
 
       // Calculate total credits including corequisites
-      const totalWithCoreqs = potentialCredits + coreqCourses.reduce((sum, c) => sum + c.credits, 0)
+      const totalCredits = currentCredits + course.credits +
+        coreqCourses.reduce((sum, c) => sum + c.credits, 0)
 
       // Only add if it doesn't exceed max credits
-      if (totalWithCoreqs <= maxCredits) {
+      if (totalCredits <= maxCredits) {
         coursesToSchedule.push(course)
         currentCredits += course.credits
         processedCoreqs.add(course.id)
-
-        if (course.isElective) {
-          electivesAdded++
-        } else {
-          requiredAdded++
-        }
 
         // Add corequisites
         for (const coreqCourse of coreqCourses) {
           coursesToSchedule.push(coreqCourse)
           currentCredits += coreqCourse.credits
           processedCoreqs.add(coreqCourse.id)
-
-          if (coreqCourse.isElective) {
-            electivesAdded++
-          } else {
-            requiredAdded++
-          }
         }
       }
     }
@@ -455,7 +430,7 @@ function generatePrerequisiteAwareSchedule(
       console.log(`✓ ${course.code} (${course.credits} cr)`)
     }
 
-    console.log(`${semester} ${year}: ${coursesToSchedule.length} courses (${requiredAdded} required + ${electivesAdded} electives), ${currentCredits} credits`)
+    console.log(`${semester} ${year}: ${coursesToSchedule.length} courses, ${currentCredits} credits`)
 
     // Stop if all courses are scheduled
     if (scheduledCourseIds.size - completedCourseIds.size >= allCoursesToSchedule.length) {
