@@ -82,10 +82,14 @@ async function getCourseCatalog(): Promise<string> {
 
 export async function POST(request: NextRequest) {
   try {
+    console.log("[Chat API] Request received at:", new Date().toISOString())
+
     const session = await getServerSession(authOptions)
     if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
+
+    console.log("[Chat API] User:", session.user.email)
 
     // Rate limiting check
     const userEmail = session.user.email

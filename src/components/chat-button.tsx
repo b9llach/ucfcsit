@@ -18,27 +18,31 @@ export function ChatButton() {
   const [messages, setMessages] = useState<Message[]>([DEFAULT_MESSAGE])
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [isInitialized, setIsInitialized] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  // Load messages from localStorage on mount
+  // ONLY load messages when chat is opened for the first time
   useEffect(() => {
-    const stored = localStorage.getItem("degreeme-chat-history")
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored)
-        setMessages(parsed)
-      } catch (e) {
-        setMessages([DEFAULT_MESSAGE])
+    if (isOpen && !isInitialized) {
+      const stored = localStorage.getItem("degreeme-chat-history")
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored)
+          setMessages(parsed)
+        } catch (e) {
+          setMessages([DEFAULT_MESSAGE])
+        }
       }
+      setIsInitialized(true)
     }
-  }, [])
+  }, [isOpen, isInitialized])
 
-  // Save messages to localStorage whenever they change
+  // Save messages to localStorage whenever they change (only after initialization)
   useEffect(() => {
-    if (messages.length > 0) {
+    if (isInitialized && messages.length > 0) {
       localStorage.setItem("degreeme-chat-history", JSON.stringify(messages))
     }
-  }, [messages])
+  }, [messages, isInitialized])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -54,6 +58,12 @@ export function ChatButton() {
 
     const userMessage = input.trim()
     setInput("")
+
+    // CRITICAL: Only call API when user explicitly submits a message
+    // Prevent any automatic API calls on mount or page load
+    if (!userMessage) return
+
+    console.log("[ChatButton] Making API call with message:", userMessage)
 
     // Add user message to chat
     setMessages(prev => [...prev, { role: "user", content: userMessage }])
