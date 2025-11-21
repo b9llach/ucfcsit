@@ -373,10 +373,26 @@ function generatePrerequisiteAwareSchedule(
       break // We're done!
     }
 
-    // NORMAL SCHEDULING: Target 4-5 courses per semester
-    const targetCoursesPerSemester = 5
+    // NORMAL SCHEDULING: Frontload earlier semesters (more courses early, fewer later)
+    // Calculate what semester we're in (0 = first semester)
+    const semestersScheduled = scheduledCourses.reduce((acc, course) => {
+      const key = `${course.semester}-${course.year}`
+      return acc.has(key) ? acc : acc.add(key)
+    }, new Set()).size
+
+    // Frontload strategy: Start with 5-6 courses, reduce to 3-4 towards the end
+    // Use a curve: earlier = more courses, later = fewer courses
+    const maxCoursesPerSemester = 6
     const minCoursesPerSemester = 3
+
+    // Frontloading: Prioritize 5-6 courses in first few semesters, 3-4 in later ones
+    const targetCoursesPerSemester = semestersScheduled < 3
+      ? Math.min(maxCoursesPerSemester, Math.max(5, availableCourses.length))  // First 3 semesters: 5-6 courses
+      : Math.min(5, Math.max(4, Math.ceil(remainingTotal / (remainingSemesters || 1)))) // Later: 4-5 courses
+
     const maxCredits = 18
+
+    console.log(`Semester ${semestersScheduled + 1}: Target ${targetCoursesPerSemester} courses (frontloading strategy)`)
 
     // If we can only schedule <3 courses but there are more courses coming later, skip this semester
     if (availableCourses.length < minCoursesPerSemester && remainingTotal > availableCourses.length) {
