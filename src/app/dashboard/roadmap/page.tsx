@@ -162,30 +162,54 @@ function RoadmapContent() {
       <nav className="fixed top-0 left-0 right-0 z-[9999] bg-white/95 backdrop-blur-xl border-b border-black/10 pointer-events-auto" style={{ pointerEvents: 'auto', isolation: 'isolate' }}>
         <div className="max-w-[1400px] mx-auto px-6 pointer-events-auto">
           <div className="flex justify-between items-center h-11 pointer-events-auto">
-            <Link href="/" className="flex items-center transition-opacity hover:opacity-60 pointer-events-auto" style={{ pointerEvents: 'auto' }}>
+            <button
+              onClick={(e) => { e.preventDefault(); router.push("/"); }}
+              className="flex items-center transition-opacity hover:opacity-60 pointer-events-auto cursor-pointer"
+              style={{ pointerEvents: 'auto', background: 'none', border: 'none', padding: 0, font: 'inherit' }}
+            >
               <span className="font-semibold text-[17px] text-black tracking-tight">DegreeMe</span>
-            </Link>
+            </button>
 
             <div className="flex items-center space-x-8 pointer-events-auto">
               <div className="hidden md:flex items-center space-x-8 text-[12px] pointer-events-auto">
-                <Link href="/dashboard" className="text-black/70 hover:text-black transition-all-smooth pb-1 pointer-events-auto" style={{ pointerEvents: 'auto' }}>
+                <button
+                  onClick={(e) => { e.preventDefault(); router.push("/dashboard"); }}
+                  className="text-black/70 hover:text-black transition-all-smooth pb-1 pointer-events-auto cursor-pointer"
+                  style={{ pointerEvents: 'auto', background: 'none', border: 'none', padding: 0, font: 'inherit' }}
+                >
                   Overview
-                </Link>
-                <Link href="/dashboard/courses" className="text-black/70 hover:text-black transition-all-smooth pb-1 pointer-events-auto" style={{ pointerEvents: 'auto' }}>
+                </button>
+                <button
+                  onClick={(e) => { e.preventDefault(); router.push("/dashboard/courses"); }}
+                  className="text-black/70 hover:text-black transition-all-smooth pb-1 pointer-events-auto cursor-pointer"
+                  style={{ pointerEvents: 'auto', background: 'none', border: 'none', padding: 0, font: 'inherit' }}
+                >
                   Courses
-                </Link>
-                <Link href="/dashboard/roadmap" className="text-black transition-all-smooth border-b-2 border-black pb-1 pointer-events-auto" style={{ pointerEvents: 'auto' }}>
+                </button>
+                <span className="text-black transition-all-smooth border-b-2 border-black pb-1 pointer-events-auto">
                   Roadmap
-                </Link>
-                <Link href="/dashboard/progress" className="text-black/70 hover:text-black transition-all-smooth pb-1 pointer-events-auto" style={{ pointerEvents: 'auto' }}>
+                </span>
+                <button
+                  onClick={(e) => { e.preventDefault(); router.push("/dashboard/progress"); }}
+                  className="text-black/70 hover:text-black transition-all-smooth pb-1 pointer-events-auto cursor-pointer"
+                  style={{ pointerEvents: 'auto', background: 'none', border: 'none', padding: 0, font: 'inherit' }}
+                >
                   Progress
-                </Link>
-                <Link href="/schedule" className="text-black/70 hover:text-black transition-all-smooth pb-1 pointer-events-auto" style={{ pointerEvents: 'auto' }}>
+                </button>
+                <button
+                  onClick={(e) => { e.preventDefault(); router.push("/schedule"); }}
+                  className="text-black/70 hover:text-black transition-all-smooth pb-1 pointer-events-auto cursor-pointer"
+                  style={{ pointerEvents: 'auto', background: 'none', border: 'none', padding: 0, font: 'inherit' }}
+                >
                   Schedule
-                </Link>
-                <Link href="/feedback" className="text-black/70 hover:text-black transition-all-smooth pb-1 pointer-events-auto" style={{ pointerEvents: 'auto' }}>
+                </button>
+                <button
+                  onClick={(e) => { e.preventDefault(); router.push("/feedback"); }}
+                  className="text-black/70 hover:text-black transition-all-smooth pb-1 pointer-events-auto cursor-pointer"
+                  style={{ pointerEvents: 'auto', background: 'none', border: 'none', padding: 0, font: 'inherit' }}
+                >
                   Feedback
-                </Link>
+                </button>
               </div>
 
               <DropdownMenu>
