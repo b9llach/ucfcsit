@@ -394,6 +394,9 @@ function generatePrerequisiteAwareSchedule(
     const maxCoursesPerSemester = 6
     const minCoursesPerSemester = 3
 
+    // Calculate remaining semesters in the plan
+    const remainingSemesters = semesterPlan.length - semestersScheduled
+
     // Frontloading: Prioritize 5-6 courses in first few semesters, 3-4 in later ones
     const targetCoursesPerSemester = semestersScheduled < 3
       ? Math.min(maxCoursesPerSemester, Math.max(5, availableCourses.length))  // First 3 semesters: 5-6 courses
