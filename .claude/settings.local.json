@@ -10,7 +10,8 @@
       "Bash(taskkill:*)",
       "Bash(cat:*)",
       "Bash(curl:*)",
-      "Bash(del check-descriptions.ts)"
+      "Bash(del check-descriptions.ts)",
+      "Bash(node:*)"
     ],
     "deny": [],
     "ask": []

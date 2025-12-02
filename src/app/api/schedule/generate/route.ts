@@ -337,9 +337,13 @@ function generatePrerequisiteAwareSchedule(
     // Calculate remaining courses total
     const remainingTotal = allCoursesToSchedule.filter(c => !scheduledCourseIds.has(c.id)).length
 
-    // CONSOLIDATION RULE: If ≤5 courses remain and they're ALL available, schedule them all in ONE semester
-    if (remainingTotal <= 5 && availableCourses.length === remainingTotal) {
-      console.log(`🎯 CONSOLIDATING: All ${remainingTotal} remaining courses are available - scheduling in one semester`)
+    // CONSOLIDATION RULE: If ≤3 courses remain and they're ALL available, schedule them all in ONE semester
+    // OR if we have few courses available (≤3) and few remaining overall, try to consolidate
+    const shouldConsolidate = (remainingTotal <= 3 && availableCourses.length === remainingTotal) ||
+                              (availableCourses.length <= 3 && remainingTotal <= 3)
+
+    if (shouldConsolidate) {
+      console.log(`🎯 CONSOLIDATING: ${remainingTotal} remaining courses, ${availableCourses.length} available - scheduling in one semester`)
 
       let currentCredits = 0
       const maxCredits = 18

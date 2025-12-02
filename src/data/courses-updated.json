@@ -1,19 +1,11 @@
 {
   "courses": {
     "MAC1105C": {
-      "name": "College Algebra", 
+      "name": "College Algebra",
       "credits": 3,
       "prerequisites": [],
       "corequisites": [],
       "alternatives": ["MAC1140"],
-      "gep_requirement": false
-    },
-    "MAC1140": {
-      "name": "Pre-Calc Algebra",
-      "credits": 3, 
-      "prerequisites": [],
-      "corequisites": [],
-      "alternatives": ["MAC1105C"],
       "gep_requirement": false
     },
     "MAC1114C": {
