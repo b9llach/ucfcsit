@@ -80,7 +80,7 @@ export default function Dashboard() {
   }
 
   const completedCourses = userCourses.filter(uc => uc.completed)
-  const totalCredits = completedCourses.reduce((sum, uc) => sum + uc.course.credits, 0)
+  const totalCredits = completedCourses.reduce((sum, uc) => sum + uc.course.credits, 0) + 27
   const remainingCredits = 120 - totalCredits
 
   const requiredCourses = courses.filter(course =>

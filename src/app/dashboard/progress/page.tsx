@@ -78,7 +78,7 @@ export default function ProgressPage() {
   }
 
   const completedCourses = userCourses.filter(uc => uc.completed)
-  const totalCredits = completedCourses.reduce((sum, uc) => sum + uc.course.credits, 0)
+  const totalCredits = completedCourses.reduce((sum, uc) => sum + uc.course.credits, 0) + 27
   const remainingCredits = 120 - totalCredits
 
   const requiredCourses = courses.filter(course =>
@@ -104,8 +104,8 @@ export default function ProgressPage() {
     ? Math.round((completedRequired / requiredCourses.length) * 100)
     : 0
 
-  // 3. Elective Progress - elective courses completed (need at least 6 for CS/IT)
-  const minElectives = 6
+  // 3. Elective Progress - elective courses completed (need at least 2 for CS/IT)
+  const minElectives = 2
   const electiveProgress = Math.min(Math.round((completedElectives / minElectives) * 100), 100)
 
   if (status === "loading" || loading) {
